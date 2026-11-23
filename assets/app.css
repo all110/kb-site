@@ -1448,6 +1448,11 @@ pre.code:hover .copy { opacity: 1; }
   .toc { display: none; }
 }
 
+/* 关闭按钮只在移动端抽屉里出现；基础规则必须在媒体查询之前，否则会覆盖掉 */
+.nav-close { display: none; margin-left: auto; padding: 4px; width: 32px; height: 32px; flex: none; }
+.nav-close svg { width: 20px; height: 20px; }
+@keyframes nav-fade { from { opacity: 0; } to { opacity: 1; } }
+
 @media (max-width: 860px) {
   .layout { grid-template-columns: minmax(0, 1fr); }
   .sidebar {
@@ -1475,10 +1480,6 @@ pre.code:hover .copy { opacity: 1; }
   }
   .nav-close { display: inline-flex; }
 }
-
-.nav-close { display: none; margin-left: auto; padding: 4px; width: 32px; height: 32px; }
-.nav-close svg { width: 20px; height: 20px; }
-@keyframes nav-fade { from { opacity: 0; } to { opacity: 1; } }
 
 .menu-btn { display: none; }
 @media (max-width: 860px) { .menu-btn { display: inline-flex; } }
