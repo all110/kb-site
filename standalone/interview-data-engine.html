@@ -1,0 +1,1658 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>数据引擎面试题库 · YonData</title>
+<meta name="description" content="数据引擎面试题库：功能面、技术面、承接上层分析的三条入口、边界与 10 道追问，含 6 张架构图。">
+<style>
+/* ============================================================
+   令牌
+   ============================================================ */
+:root{
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  --mono:"JetBrains Mono","Cascadia Code",Consolas,"SF Mono",monospace;
+
+  --bg:#fbfcfe;
+  --surface:#ffffff;
+  --surface-2:#f5f7fa;
+  --border:#e3e7ee;
+  --border-strong:#cfd6e2;
+  --text:#141a22;
+  --text-2:#4d5866;
+  --text-3:#8b95a5;
+
+  --indigo:#3b5bdb;
+  --indigo-soft:#eef2ff;
+  --indigo-line:#c3cffd;
+  --teal:#0c8599;
+  --teal-soft:#e6f7fa;
+  --amber:#d97706;
+  --amber-soft:#fff8ec;
+  --rose:#c2255c;
+  --rose-soft:#fff0f5;
+  --green:#0f9d58;
+  --green-soft:#eaf8f0;
+  --violet:#7048e8;
+  --violet-soft:#f2eeff;
+
+  --r-sm:6px; --r-md:10px; --r-lg:16px;
+  --sh-1:0 1px 2px rgba(16,24,40,.05),0 1px 3px rgba(16,24,40,.07);
+  --sh-2:0 6px 20px rgba(16,24,40,.09),0 2px 6px rgba(16,24,40,.05);
+  --sh-3:0 20px 50px rgba(16,24,40,.16);
+}
+[data-theme="dark"]{
+  --bg:#0c0f14; --surface:#141922; --surface-2:#101620;
+  --border:#232c3a; --border-strong:#35414f;
+  --text:#e7ebf1; --text-2:#a6b1c0; --text-3:#6d7889;
+  --indigo:#7aa2ff; --indigo-soft:#16203a; --indigo-line:#2b3f6b;
+  --teal:#4dd4e8; --teal-soft:#0f2b31;
+  --amber:#fbbf24; --amber-soft:#2b2313;
+  --rose:#ff7aa8; --rose-soft:#2c1320;
+  --green:#4ade80; --green-soft:#12291c;
+  --violet:#b197fc; --violet-soft:#221a3a;
+  --sh-1:0 1px 2px rgba(0,0,0,.5);
+  --sh-2:0 8px 26px rgba(0,0,0,.55);
+  --sh-3:0 24px 60px rgba(0,0,0,.7);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0;background:var(--bg);color:var(--text);
+  font-family:var(--sans);font-size:15.5px;line-height:1.78;
+  -webkit-font-smoothing:antialiased;
+}
+::selection{background:rgba(59,91,219,.22)}
+
+/* ============================================================
+   布局
+   ============================================================ */
+.shell{display:grid;grid-template-columns:236px minmax(0,1fr);gap:0;max-width:1360px;margin:0 auto}
+@media(max-width:1080px){.shell{grid-template-columns:minmax(0,1fr)}.rail{display:none}}
+
+.rail{
+  position:sticky;top:0;align-self:start;height:100vh;overflow-y:auto;
+  padding:26px 18px 40px 26px;border-right:1px solid var(--border);
+  font-size:13px;
+}
+.rail-brand{display:flex;align-items:center;gap:10px;margin-bottom:22px}
+.rail-mark{
+  width:34px;height:34px;border-radius:9px;display:grid;place-items:center;
+  background:linear-gradient(135deg,var(--indigo),var(--violet));color:#fff;
+  font-weight:700;font-size:15px;letter-spacing:-.5px;box-shadow:0 3px 10px rgba(59,91,219,.35)
+}
+.rail-title{font-weight:700;font-size:14px;line-height:1.3}
+.rail-sub{font-size:11px;color:var(--text-3);letter-spacing:.02em}
+.rail ol{list-style:none;margin:0;padding:0;counter-reset:s}
+.rail li{counter-increment:s}
+.rail a{
+  display:block;padding:6px 10px 6px 12px;margin:1px 0;border-radius:var(--r-sm);
+  color:var(--text-2);text-decoration:none;border-left:2px solid transparent;
+  line-height:1.45;transition:.14s
+}
+.rail a::before{content:counter(s) ". ";color:var(--text-3);font-variant-numeric:tabular-nums}
+.rail a:hover{background:var(--surface-2);color:var(--text)}
+.rail a.active{background:var(--indigo-soft);color:var(--indigo);font-weight:600;border-left-color:var(--indigo)}
+
+.page{min-width:0;padding:0 48px 96px}
+@media(max-width:1080px){.page{padding:0 22px 72px}}
+
+/* ============================================================
+   浮动控件
+   ============================================================ */
+.fab{
+  position:fixed;right:26px;bottom:26px;display:flex;flex-direction:column;gap:10px;z-index:40
+}
+.fab button{
+  width:40px;height:40px;border-radius:50%;border:1px solid var(--border);
+  background:var(--surface);color:var(--text-2);cursor:pointer;
+  display:grid;place-items:center;box-shadow:var(--sh-2);transition:.16s
+}
+.fab button:hover{color:var(--indigo);border-color:var(--indigo);transform:translateY(-2px)}
+.fab svg{width:17px;height:17px}
+
+/* ============================================================
+   Hero
+   ============================================================ */
+.hero{
+  margin:0 -48px 0;padding:64px 48px 48px;
+  background:
+    radial-gradient(900px 320px at 12% -10%,rgba(59,91,219,.16),transparent 62%),
+    radial-gradient(700px 300px at 88% 0%,rgba(12,133,153,.12),transparent 60%);
+  border-bottom:1px solid var(--border);
+}
+@media(max-width:1080px){.hero{margin:0 -22px;padding:44px 22px 36px}}
+.hero-eyebrow{
+  display:inline-flex;align-items:center;gap:8px;
+  font-size:12px;font-weight:650;letter-spacing:.09em;text-transform:uppercase;
+  color:var(--indigo);background:var(--indigo-soft);
+  border:1px solid var(--indigo-line);border-radius:99px;padding:5px 13px;margin-bottom:20px
+}
+.hero h1{
+  font-size:42px;line-height:1.16;letter-spacing:-.032em;font-weight:750;
+  margin:0 0 14px;max-width:19em
+}
+@media(max-width:700px){.hero h1{font-size:29px}}
+.hero h1 em{
+  font-style:normal;
+  background:linear-gradient(100deg,var(--indigo),var(--violet) 55%,var(--teal));
+  -webkit-background-clip:text;background-clip:text;color:transparent
+}
+.hero-lead{font-size:17px;color:var(--text-2);max-width:44em;margin:0 0 26px;line-height:1.72}
+.badges{display:flex;flex-wrap:wrap;gap:9px}
+.badge{
+  display:inline-flex;align-items:center;gap:6px;
+  font-size:12.5px;font-weight:550;color:var(--text-2);
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:99px;padding:5px 13px;box-shadow:var(--sh-1)
+}
+.badge b{color:var(--text);font-weight:650;font-variant-numeric:tabular-nums}
+.badge .dot{width:6px;height:6px;border-radius:50%;background:var(--indigo)}
+.badge.t .dot{background:var(--teal)}
+.badge.a .dot{background:var(--amber)}
+.badge.g .dot{background:var(--green)}
+
+/* ============================================================
+   章节
+   ============================================================ */
+section{margin:0 0 68px;scroll-margin-top:24px}
+.sec-head{display:flex;align-items:baseline;gap:14px;margin:0 0 6px}
+.sec-num{
+  font-family:var(--mono);font-size:12px;font-weight:700;letter-spacing:.06em;
+  color:var(--indigo);background:var(--indigo-soft);
+  border-radius:6px;padding:3px 8px;flex-shrink:0;transform:translateY(-3px)
+}
+.sec-head h2{
+  font-size:26px;line-height:1.32;letter-spacing:-.022em;font-weight:700;margin:0
+}
+@media(max-width:700px){.sec-head h2{font-size:21px}}
+.sec-desc{color:var(--text-2);margin:0 0 26px;max-width:47em;font-size:15px}
+
+h3{
+  font-size:17.5px;font-weight:660;letter-spacing:-.012em;
+  margin:36px 0 12px;padding-left:13px;border-left:3px solid var(--indigo-line)
+}
+h4{font-size:15px;font-weight:660;margin:24px 0 8px;color:var(--text)}
+p{margin:0 0 15px}
+a{color:var(--indigo)}
+strong{font-weight:660}
+code{
+  font-family:var(--mono);font-size:.87em;padding:1.5px 5px;
+  background:var(--surface-2);border:1px solid var(--border);border-radius:4px;
+  white-space:nowrap
+}
+
+/* ============================================================
+   卡片
+   ============================================================ */
+.card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--r-lg);padding:22px 24px;box-shadow:var(--sh-1);
+  margin:0 0 16px
+}
+.card.hl{
+  background:linear-gradient(180deg,var(--indigo-soft),var(--surface) 78%);
+  border-color:var(--indigo-line)
+}
+.card.teal{background:linear-gradient(180deg,var(--teal-soft),var(--surface) 78%);border-color:rgba(12,133,153,.28)}
+.card.amber{background:linear-gradient(180deg,var(--amber-soft),var(--surface) 78%);border-color:rgba(217,119,6,.26)}
+.card h4{margin-top:0}
+
+/* 30秒结论 */
+.conclusion{
+  border-left:4px solid var(--indigo);
+  background:linear-gradient(100deg,var(--indigo-soft),var(--surface) 62%);
+  border-radius:0 var(--r-lg) var(--r-lg) 0;
+  padding:26px 28px;margin:0 0 22px;box-shadow:var(--sh-1)
+}
+.conclusion p{font-size:16.5px;line-height:1.75;margin:0 0 14px}
+.conclusion p:last-child{margin:0;color:var(--text-2);font-size:14.5px}
+.conclusion .k{
+  background:linear-gradient(180deg,transparent 62%,rgba(59,91,219,.22) 62%);
+  font-weight:650;padding:0 2px
+}
+
+/* 能力卡网格 */
+.cap-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;margin:22px 0 8px}
+.cap{
+  position:relative;background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--r-md);padding:20px 20px 18px 22px;box-shadow:var(--sh-1);
+  transition:.18s;overflow:hidden
+}
+.cap::before{
+  content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--indigo)
+}
+.cap:nth-child(2)::before{background:var(--teal)}
+.cap:nth-child(3)::before{background:var(--amber)}
+.cap:nth-child(4)::before{background:var(--violet)}
+.cap:nth-child(5)::before{background:var(--green)}
+.cap:nth-child(6)::before{background:var(--rose)}
+.cap:hover{transform:translateY(-2px);box-shadow:var(--sh-2);border-color:var(--border-strong)}
+.cap-top{display:flex;align-items:center;gap:10px;margin-bottom:9px}
+.cap-ic{
+  width:30px;height:30px;border-radius:8px;display:grid;place-items:center;
+  background:var(--indigo-soft);color:var(--indigo);flex-shrink:0
+}
+.cap:nth-child(2) .cap-ic{background:var(--teal-soft);color:var(--teal)}
+.cap:nth-child(3) .cap-ic{background:var(--amber-soft);color:var(--amber)}
+.cap:nth-child(4) .cap-ic{background:var(--violet-soft);color:var(--violet)}
+.cap:nth-child(5) .cap-ic{background:var(--green-soft);color:var(--green)}
+.cap:nth-child(6) .cap-ic{background:var(--rose-soft);color:var(--rose)}
+.cap-ic svg{width:16px;height:16px}
+.cap h5{margin:0;font-size:14.5px;font-weight:660}
+.cap p{font-size:13.5px;line-height:1.68;color:var(--text-2);margin:0}
+.cap .mini{
+  display:block;margin-top:10px;font-family:var(--mono);font-size:11.5px;
+  color:var(--text-3);border-top:1px dashed var(--border);padding-top:8px;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap
+}
+
+/* ============================================================
+   代码块
+   ============================================================ */
+pre{
+  position:relative;background:var(--surface-2);border:1px solid var(--border);
+  border-radius:var(--r-md);padding:16px 18px;overflow-x:auto;
+  font-family:var(--mono);font-size:12.8px;line-height:1.62;margin:16px 0 22px
+}
+pre code{background:none;border:0;padding:0;font-size:inherit;white-space:pre}
+pre[data-lang]::before{
+  content:attr(data-lang);position:absolute;top:0;right:0;
+  font-size:10px;letter-spacing:.07em;text-transform:uppercase;color:var(--text-3);
+  background:var(--surface);border-left:1px solid var(--border);border-bottom:1px solid var(--border);
+  padding:1px 9px;border-radius:0 var(--r-md) 0 var(--r-sm)
+}
+
+/* ============================================================
+   表格
+   ============================================================ */
+.tw{overflow-x:auto;margin:18px 0 26px;border:1px solid var(--border);border-radius:var(--r-md)}
+table{width:100%;border-collapse:collapse;font-size:13.5px;line-height:1.6}
+thead th{
+  background:var(--surface-2);text-align:left;font-weight:660;color:var(--text);
+  padding:10px 14px;border-bottom:1px solid var(--border-strong);white-space:nowrap
+}
+tbody td{padding:9px 14px;border-top:1px solid var(--border);color:var(--text-2);vertical-align:top}
+tbody tr:hover td{background:var(--surface-2)}
+tbody td strong{color:var(--text)}
+.num{text-align:right;font-variant-numeric:tabular-nums}
+
+/* ============================================================
+   图
+   ============================================================ */
+figure{margin:22px 0 26px}
+.fig{
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);
+  padding:22px 18px 14px;box-shadow:var(--sh-1);overflow-x:auto
+}
+.fig svg{display:block;width:100%;height:auto;min-width:620px}
+figcaption{
+  font-size:12.5px;color:var(--text-3);margin-top:10px;text-align:center;line-height:1.6
+}
+.svg-label{font-family:var(--sans);font-size:12.5px;fill:var(--text)}
+.svg-label-sm{font-family:var(--sans);font-size:11px;fill:var(--text-3)}
+.svg-mono{font-family:var(--mono);font-size:11px;fill:var(--text-2)}
+.svg-title{font-family:var(--sans);font-size:12px;font-weight:650;fill:var(--text-2);letter-spacing:.02em}
+
+/* ============================================================
+   追问卡
+   ============================================================ */
+.qa{
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);
+  margin:0 0 12px;box-shadow:var(--sh-1);overflow:hidden;transition:.16s
+}
+.qa[open]{box-shadow:var(--sh-2);border-color:var(--border-strong)}
+.qa summary{
+  display:flex;align-items:center;gap:12px;cursor:pointer;list-style:none;
+  padding:15px 20px;font-size:15px;font-weight:620;line-height:1.5;
+  user-select:none;transition:.14s
+}
+.qa summary::-webkit-details-marker{display:none}
+.qa summary:hover{background:var(--surface-2)}
+.qa-num{
+  font-family:var(--mono);font-size:11.5px;font-weight:700;color:var(--indigo);
+  background:var(--indigo-soft);border-radius:6px;padding:2px 7px;flex-shrink:0
+}
+.qa summary .chev{margin-left:auto;color:var(--text-3);transition:transform .2s;flex-shrink:0}
+.qa[open] summary .chev{transform:rotate(180deg)}
+.qa-body{padding:0 20px 20px;border-top:1px solid var(--border)}
+.qa-body>*:first-child{margin-top:16px}
+.qa-label{
+  display:inline-flex;align-items:center;gap:5px;
+  font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--teal);margin:0 0 6px
+}
+.qa-label::before{content:"";width:3px;height:11px;border-radius:2px;background:var(--teal)}
+.qa-label.two{color:var(--indigo)}
+.qa-label.two::before{background:var(--indigo)}
+.qa-label.three{color:var(--text-3)}
+.qa-label.three::before{background:var(--text-3)}
+.qa p{font-size:14px;line-height:1.75;margin:0 0 12px}
+.qa blockquote{
+  margin:10px 0 14px;padding:16px 20px;background:var(--surface-2);
+  border-left:3px solid var(--indigo-line);border-radius:0 var(--r-sm) var(--r-sm) 0;
+  font-size:14px;line-height:1.78;color:var(--text-2)
+}
+.qa blockquote b{color:var(--text)}
+.qa .code-ref{
+  font-size:12.5px;color:var(--text-3);background:var(--surface-2);
+  border:1px dashed var(--border-strong);border-radius:var(--r-sm);padding:11px 14px;
+  line-height:1.7;margin:0
+}
+.qa .code-ref code{font-size:11.5px}
+
+/* ============================================================
+   边界对照
+   ============================================================ */
+.bounds{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:20px 0}
+@media(max-width:760px){.bounds{grid-template-columns:1fr}}
+.bound{border-radius:var(--r-md);padding:20px 22px;border:1px solid}
+.bound.do{background:var(--green-soft);border-color:rgba(15,157,88,.25)}
+.bound.dont{background:var(--rose-soft);border-color:rgba(194,37,92,.22)}
+.bound h4{margin:0 0 12px;font-size:14px;display:flex;align-items:center;gap:7px}
+.bound.do h4{color:var(--green)}
+.bound.dont h4{color:var(--rose)}
+.bound ul{margin:0;padding-left:18px;font-size:13.5px;line-height:1.9;color:var(--text-2)}
+.bound li::marker{color:currentColor}
+
+/* 收口句 */
+.kicker{
+  margin:22px 0 0;padding:18px 24px;border-radius:var(--r-md);
+  background:linear-gradient(100deg,var(--violet-soft),var(--surface));
+  border:1px solid rgba(112,72,232,.24);
+  font-size:15.5px;line-height:1.7;font-weight:550
+}
+.kicker span{color:var(--violet);font-weight:700}
+
+/* ============================================================
+   速查表
+   ============================================================ */
+.quick{display:grid;gap:10px;margin:22px 0}
+.qrow{
+  display:grid;grid-template-columns:34px 1fr;gap:14px;align-items:start;
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);
+  padding:13px 18px;box-shadow:var(--sh-1);transition:.14s
+}
+.qrow:hover{border-color:var(--indigo-line);box-shadow:var(--sh-2)}
+.qrow .n{
+  width:26px;height:26px;border-radius:8px;display:grid;place-items:center;
+  font-family:var(--mono);font-size:11.5px;font-weight:700;
+  background:var(--indigo-soft);color:var(--indigo);margin-top:1px
+}
+.qrow .q{font-size:13.5px;font-weight:620;margin:0 0 3px}
+.qrow .a{font-size:13px;color:var(--text-2);margin:0;line-height:1.62}
+
+/* ============================================================
+   页脚
+   ============================================================ */
+footer{
+  margin:72px -48px 0;padding:32px 48px 48px;
+  border-top:1px solid var(--border);background:var(--surface-2);
+  font-size:12.5px;color:var(--text-3);line-height:1.9
+}
+@media(max-width:1080px){footer{margin:60px -22px 0;padding:26px 22px 40px}}
+footer b{color:var(--text-2)}
+
+/* ============================================================
+   打印
+   ============================================================ */
+@media print{
+  .rail,.fab,footer .no-print{display:none!important}
+  body{background:#fff;font-size:10.5pt;line-height:1.62}
+  .shell{display:block;max-width:none}
+  .page{padding:0}
+  .hero{margin:0;padding:0 0 18pt;background:none;border-bottom:1.5pt solid #999}
+  .hero h1{font-size:24pt}
+  .hero h1 em{color:#000;background:none;-webkit-text-fill-color:#000}
+  .hero-lead{font-size:11pt}
+  section{margin-bottom:24pt}
+  .card,.qa,.cap,.qrow,.conclusion{box-shadow:none;break-inside:avoid}
+  .qa{break-inside:avoid}
+  .qa-body{display:block!important}
+  .qa summary .chev{display:none}
+  .fig{break-inside:avoid;padding:8pt}
+  .fig svg{min-width:0}
+  pre,table,.bounds{break-inside:avoid}
+  h2,h3,h4{break-after:avoid}
+  a{color:#000;text-decoration:none}
+}
+</style>
+</head>
+<body>
+
+<div class="shell">
+
+  <!-- ================= 侧栏 ================= -->
+  <nav class="rail" aria-label="章节导航">
+    <div class="rail-brand">
+      <div class="rail-mark">Y</div>
+      <div>
+        <div class="rail-title">数据引擎面试题库</div>
+        <div class="rail-sub">YonData · 取数执行层</div>
+      </div>
+    </div>
+    <ol>
+      <li><a href="#s0">30 秒结论</a></li>
+      <li><a href="#s1">功能面：五类能力</a></li>
+      <li><a href="#s2">技术面：模块与流水线</a></li>
+      <li><a href="#s3">承接上层分析</a></li>
+      <li><a href="#s4">边界：做与不做</a></li>
+      <li><a href="#s5">10 道追问</a></li>
+      <li><a href="#s6">速查表</a></li>
+    </ol>
+  </nav>
+
+  <!-- ================= 正文 ================= -->
+  <main class="page">
+
+    <header class="hero">
+      <div class="hero-eyebrow">Interview Playbook · 第 1 题</div>
+      <h1>数据引擎到底是做什么的？<br><em>功能、技术、承接</em>三条线讲清楚</h1>
+      <p class="hero-lead">
+        这不是把七个模块背一遍的题。面试官想确认的是：你有没有搞清楚引擎的<strong>边界</strong>——
+        谁调它、传什么进去、它做完什么、返回什么、什么不归它管。
+      </p>
+      <div class="badges">
+        <span class="badge"><span class="dot"></span>纯 SDK · <b>0</b> 个 REST 接口</span>
+        <span class="badge t"><span class="dot"></span>核心模块 <b>3032</b> 个 Java 文件</span>
+        <span class="badge a"><span class="dot"></span>处理器 <b>23</b> / <b>8</b> / <b>14</b></span>
+        <span class="badge g"><span class="dot"></span>数据源插件 <b>63</b> 个</span>
+      </div>
+    </header>
+
+    <!-- ========== 0 ========== -->
+    <section id="s0">
+      <div class="sec-head"><span class="sec-num">00</span><h2>先说结论：30 秒能背的版本</h2></div>
+
+      <div class="conclusion">
+        <p>
+          数据引擎是智能分析的<span class="k">取数执行层</span>。上层——仪表板、自由报表、大屏、语义模型预览、ChatBI——负责把
+          「用户要看什么」翻译成一个查询描述器 <code>QuerySchemaParam</code>，交给引擎；引擎负责把它变成能跑的 SQL、
+          选对数据源执行、把结果算完，返回一个统一的 <code>DataResult</code>。
+        </p>
+        <p>
+          它是<b>纯 SDK，对外零个 REST 接口</b>——没有 Controller，谁调它谁就得自己传 <code>QuerySchemaParam</code>。
+          所以「引擎做了什么」有个很干净的答案：<b>从 <code>QuerySchemaParam</code> 进 <code>EngineContext</code> 开始，
+          到 <code>DataResult</code> 交回去为止，中间全是引擎的事</b>。往上的业务语义、往下的数据库细节都不归它管。
+        </p>
+      </div>
+
+      <p class="svg-label-sm" style="color:var(--text-2);font-size:14px">
+        这三句话把边界说清楚了，面试官往下问就有抓手。下面按他问的五个点逐层展开。
+      </p>
+    </section>
+
+    <!-- ========== 1 ========== -->
+    <section id="s1">
+      <div class="sec-head"><span class="sec-num">01</span><h2>功能面：它对外提供什么能力</h2></div>
+      <p class="sec-desc">
+        引擎对外就一个契约：<b>描述器进、结果出</b>。为了完成这一次转换，它提供六类能力。
+      </p>
+
+      <div class="cap-grid">
+
+        <div class="cap">
+          <div class="cap-top">
+            <div class="cap-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h10M4 18h13"/></svg></div>
+            <h5>① 查询编排</h5>
+          </div>
+          <p>一次查询不是一次 SQL。分页要总数、交叉表要小计、累计字段要承前行——同一份描述器复制出多个派生上下文，各跑各的，最后合并回一个 <code>DataResult</code>。</p>
+          <span class="mini">StandardFlowExecutor → prepareEngineContext → preExec → realExec → afterExec</span>
+        </div>
+
+        <div class="cap">
+          <div class="cap-top">
+            <div class="cap-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M4 12h16M4 17h7"/><circle cx="18" cy="17" r="2.4"/></svg></div>
+            <h5>② SQL 生成</h5>
+          </div>
+          <p>不拼字符串，先构造 <code>QrySchemaBlock</code>（select/from/where/group/having/order/limit 七段），再按方言翻译。查询块是可被改写的中间表示——权限要加条件、多语要裁表、RBO 要动 AST。</p>
+          <span class="mini">CommonSqlCreator → SqlFactory.assembleSQL3 → SqlDTO</span>
+        </div>
+
+        <div class="cap">
+          <div class="cap-top">
+            <div class="cap-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="m13 2-3 7h5l-3 7"/><path d="M4 20h16"/></svg></div>
+            <h5>③ SQL 治理</h5>
+          </div>
+          <p>配置驱动的会话优化：按「租户@用户@对象」匹配，依次注入 SET 参数、hint、强制索引、RBO 开关；8 条规则做 AST 等价改写；任一阶段异常整条回退原 SQL。</p>
+          <span class="mini">MatchSqlOptimizeConfig · BloodRelUtils · 5 方言工厂</span>
+        </div>
+
+        <div class="cap">
+          <div class="cap-top">
+            <div class="cap-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M8 9h8M8 13h5"/></svg></div>
+            <h5>④ 结果计算</h5>
+          </div>
+          <p>SQL 算不了的拉回内存算：公式拆成「DB 表达式 + 内存表达式」两半，同比环比扩取分页，累计字段补前缀查询，再做行列转换、枚举翻译、TopN 补行。</p>
+          <span class="mini">FormulaSplitter · UniformFormulaResultComputer · SeqCumulativeCalculation</span>
+        </div>
+
+        <div class="cap">
+          <div class="cap-top">
+            <div class="cap-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 4 6.5v5c0 5 3.4 8.2 8 9.5 4.6-1.3 8-4.5 8-9.5v-5z"/><path d="m9 12 2 2 4-4"/></svg></div>
+            <h5>⑤ 权限与安全</h5>
+          </div>
+          <p>字段权限只交接策略不改 SQL；数据权限必须改 SQL 或生成 no-data；租户隔离在终稿阶段统一加；SQL 注入前置拦截；schema 映射由 visitor 改写。</p>
+          <span class="mini">addExtraSqlPart 六步 · getFinalQuery · AntiSqlInjectionPreProcessor</span>
+        </div>
+
+        <div class="cap">
+          <div class="cap-top">
+            <div class="cap-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="6" rx="7" ry="3"/><path d="M5 6v6c0 1.7 3.1 3 7 3s7-1.3 7-3V6"/><path d="M5 12v6c0 1.7 3.1 3 7 3s7-1.3 7-3v-6"/></svg></div>
+            <h5>⑥ 数据源接入</h5>
+          </div>
+          <p>63 个插件靠约定发现，不靠 if-else：每个模块放一份 <code>META-INF/intelliv.datasource.plugin</code>，启动扫描登记，门面按方言取连接与 actuator。引擎本身不认识任何具体数据库。</p>
+          <span class="mini">PluginInfoLoader · DriverClassLoader · PluginProvider</span>
+        </div>
+
+      </div>
+
+      <h3>编排的核心是「派生上下文」</h3>
+      <p>
+        这是理解引擎的第一把钥匙：<b>一次查询不是一次 SQL</b>。分页要总数、交叉表要小计合计、累积字段要承前行、同比环比要扩取分页——
+        这些都是<b>同一份描述器复制出来、换个 <code>ProcessorType</code> 再跑一遍</b>，最后把结果合并回同一个 <code>DataResult</code>。
+      </p>
+
+      <figure>
+        <div class="fig">
+          <svg viewBox="0 0 800 300" role="img" aria-label="派生查询示意图：主上下文复制出五种派生上下文">
+            <defs>
+              <marker id="ar1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                <path d="M0 0 10 5 0 10z" fill="var(--border-strong)"/>
+              </marker>
+            </defs>
+
+            <!-- 主上下文 -->
+            <rect x="28" y="108" width="150" height="84" rx="10" fill="var(--indigo-soft)" stroke="var(--indigo-line)" stroke-width="1.6"/>
+            <text x="103" y="134" text-anchor="middle" class="svg-title" style="fill:var(--indigo)">主 EngineContext</text>
+            <text x="103" y="153" text-anchor="middle" class="svg-mono">ProcessorType.main</text>
+            <text x="103" y="172" text-anchor="middle" class="svg-label-sm">主数据 · 必跑</text>
+
+            <!-- 复制箭头 -->
+            <path d="M178 150 H218" stroke="var(--border-strong)" stroke-width="1.6" marker-end="url(#ar1)"/>
+            <text x="198" y="140" text-anchor="middle" class="svg-label-sm">KryoUtil.copy</text>
+
+            <!-- 派生五个 -->
+            <g>
+              <rect x="230" y="18" width="180" height="46" rx="8" fill="var(--surface)" stroke="var(--border)" stroke-width="1.4"/>
+              <text x="244" y="37" class="svg-label">count · 总数</text>
+              <text x="244" y="54" class="svg-mono">PageCountQueryProcessor</text>
+            </g>
+            <g>
+              <rect x="230" y="78" width="180" height="46" rx="8" fill="var(--surface)" stroke="var(--border)" stroke-width="1.4"/>
+              <text x="244" y="97" class="svg-label">total · 小计合计</text>
+              <text x="244" y="114" class="svg-mono">TotalQueryProcessor</text>
+            </g>
+            <g>
+              <rect x="230" y="138" width="180" height="46" rx="8" fill="var(--surface)" stroke="var(--border)" stroke-width="1.4"/>
+              <text x="244" y="157" class="svg-label">prerow · 承前行</text>
+              <text x="244" y="174" class="svg-mono">复用 MainQueryProcessor</text>
+            </g>
+            <g>
+              <rect x="230" y="198" width="180" height="46" rx="8" fill="var(--surface)" stroke="var(--border)" stroke-width="1.4"/>
+              <text x="244" y="217" class="svg-label">advPreRow · 高级计算</text>
+              <text x="244" y="234" class="svg-mono">无专用 @QryProcessor</text>
+            </g>
+            <g>
+              <rect x="230" y="258" width="180" height="34" rx="8" fill="var(--surface)" stroke="var(--border)" stroke-width="1.4"/>
+              <text x="244" y="279" class="svg-label">empty · 只查计数/合计</text>
+            </g>
+
+            <path d="M218 150 C224 150 224 41 230 41" stroke="var(--border-strong)" stroke-width="1.3" fill="none" marker-end="url(#ar1)"/>
+            <path d="M218 150 C224 150 224 101 230 101" stroke="var(--border-strong)" stroke-width="1.3" fill="none" marker-end="url(#ar1)"/>
+            <path d="M218 150 C224 150 224 161 230 161" stroke="var(--border-strong)" stroke-width="1.3" fill="none" marker-end="url(#ar1)"/>
+            <path d="M218 150 C224 150 224 221 230 221" stroke="var(--border-strong)" stroke-width="1.3" fill="none" marker-end="url(#ar1)"/>
+            <path d="M218 150 C224 150 224 275 230 275" stroke="var(--border-strong)" stroke-width="1.3" fill="none" marker-end="url(#ar1)"/>
+
+            <!-- 执行 -->
+            <text x="432" y="120" class="svg-title">各自执行</text>
+            <text x="432" y="142" class="svg-mono">realExec 异步提交</text>
+            <text x="432" y="160" class="svg-mono">按 ProcessorType 过滤</text>
+
+            <path d="M412 150 H500" stroke="var(--border-strong)" stroke-width="1.6" marker-end="url(#ar1)"/>
+
+            <!-- 合并 -->
+            <rect x="512" y="108" width="160" height="84" rx="10" fill="var(--green-soft)" stroke="rgba(15,157,88,.3)" stroke-width="1.6"/>
+            <text x="592" y="134" text-anchor="middle" class="svg-title" style="fill:var(--green)">合并回 DataResult</text>
+            <text x="592" y="153" text-anchor="middle" class="svg-mono">memoryTable</text>
+            <text x="592" y="170" text-anchor="middle" class="svg-mono">totalCount / totalData</text>
+            <text x="592" y="186" text-anchor="middle" class="svg-mono">preRowData / columnSf…</text>
+
+            <text x="28" y="240" class="svg-label-sm">count 命中 countCache（容量 1000 / 24h）时直接读缓存，不再查库</text>
+            <text x="28" y="262" class="svg-label-sm">总数子查询失败会被吞掉：主结果可能成功，但没有总数</text>
+          </svg>
+        </div>
+        <figcaption>图 1 · 派生上下文：一次查询在数据库侧可能看到 2~6 条 SQL</figcaption>
+      </figure>
+
+      <h3>SQL 治理：为什么不交给数据库</h3>
+      <p>
+        报表 SQL 是<b>平台自己生成的，结构完全可控</b>。用户删掉一个指标，那个字段就没被 SELECT 引用，但它所在的表还在 FROM 里——
+        这种「用不到的表和字段」是可以<b>确定性判断</b>的，不是概率问题。所以做规则改写（RBO）比等数据库 CBO 更确定、更可验证。
+      </p>
+
+      <div class="tw">
+        <table>
+          <thead><tr><th>能力</th><th>机制</th><th>入口</th></tr></thead>
+          <tbody>
+            <tr><td><strong>配置驱动的会话优化</strong></td><td>按 <code>租户@用户@对象</code> 三级 key 匹配，依次注入 SET 参数、hint、强制索引、RBO 开关</td><td><code>MatchSqlOptimizeConfig</code></td></tr>
+            <tr><td><strong>RBO 规则改写</strong></td><td>8 条：UNION 项统一、<code>SELECT *</code> 裁剪、GroupBy 项裁剪、投影裁剪、条件去重、子查询裁剪、Left Join 裁剪、过滤下推</td><td><code>BloodRelUtils</code></td></tr>
+            <tr><td><strong>大 IN 拆分</strong></td><td>Oracle 系 <code>IN</code> 超过 1000 个值自动拆</td><td><code>SQLInExprSplitVisitor</code></td></tr>
+            <tr><td><strong>多语裁剪</strong></td><td>按血缘判断哪些多语表能裁掉，裁完在结果层补译</td><td><code>SqlFactory#pruneMultiLangTable</code></td></tr>
+            <tr><td><strong>失败兜底</strong></td><td>任一阶段异常都返回原始 SQL，<b>绝不执行半改写的结果</b></td><td><code>execSqlForceIndexAndRboRulesSetting</code></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ========== 2 ========== -->
+    <section id="s2">
+      <div class="sec-head"><span class="sec-num">02</span><h2>技术面：它怎么拆的、怎么跑的</h2></div>
+      <p class="sec-desc">
+        七个 Maven 模块不是按技术分层切的，是按<b>能力归属</b>切的——改 RBO 不会碰到公式，改公式不会碰到执行编排。
+      </p>
+
+      <figure>
+        <div class="fig">
+          <svg viewBox="0 0 880 346" role="img" aria-label="引擎三层结构：上层入口、七模块、数据源插件">
+            <defs>
+              <marker id="ar0" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                <path d="M0 0 10 5 0 10z" fill="var(--border-strong)"/>
+              </marker>
+            </defs>
+
+            <!-- 泳道一：上层入口 -->
+            <rect x="16" y="16" width="848" height="84" rx="10" fill="var(--teal-soft)" stroke="rgba(12,133,153,.24)" stroke-width="1.4"/>
+            <text x="32" y="38" class="svg-title" style="fill:var(--teal)">上层入口 · 三条业务线各自组装描述器</text>
+
+            <rect x="32" y="50" width="261" height="40" rx="7" fill="var(--surface)" stroke="var(--border)" stroke-width="1.3"/>
+            <text x="162" y="75" text-anchor="middle" class="svg-label">报表分析线</text>
+            <rect x="309" y="50" width="261" height="40" rx="7" fill="var(--surface)" stroke="var(--border)" stroke-width="1.3"/>
+            <text x="439" y="75" text-anchor="middle" class="svg-label">语义模型线</text>
+            <rect x="586" y="50" width="261" height="40" rx="7" fill="var(--surface)" stroke="var(--border)" stroke-width="1.3"/>
+            <text x="716" y="75" text-anchor="middle" class="svg-label">智能问数线</text>
+
+            <path d="M440 100 V110" stroke="var(--border-strong)" stroke-width="1.5" marker-end="url(#ar0)"/>
+            <text x="452" y="109" class="svg-label-sm">统一入口：QuerySchemaParam</text>
+
+            <!-- 泳道二：七模块 -->
+            <rect x="16" y="112" width="848" height="130" rx="10" fill="var(--indigo-soft)" stroke="var(--indigo-line)" stroke-width="1.4"/>
+            <text x="32" y="134" class="svg-title" style="fill:var(--indigo)">引擎 · 七个 Maven 模块（按能力归属切，共 3032 个 Java 文件）</text>
+
+            <rect x="32" y="146" width="195" height="38" rx="7" fill="var(--surface)" stroke="var(--border)" stroke-width="1.3"/>
+            <text x="129" y="161" text-anchor="middle" class="svg-mono">query-engine</text>
+            <text x="129" y="176" text-anchor="middle" class="svg-label-sm">SQL 构造 · 方言 · 执行 · 插件门面 · 812</text>
+
+            <rect x="239" y="146" width="195" height="38" rx="7" fill="var(--surface)" stroke="var(--border)" stroke-width="1.3"/>
+            <text x="336" y="161" text-anchor="middle" class="svg-mono">calc-engine</text>
+            <text x="336" y="176" text-anchor="middle" class="svg-label-sm">执行器 · 处理器链 · 结果计算 · 478</text>
+
+            <rect x="446" y="146" width="195" height="38" rx="7" fill="var(--surface)" stroke="var(--border)" stroke-width="1.3"/>
+            <text x="543" y="161" text-anchor="middle" class="svg-mono">engine-formula</text>
+            <text x="543" y="176" text-anchor="middle" class="svg-label-sm">公式 AST · 函数注册 · 585</text>
+
+            <rect x="653" y="146" width="195" height="38" rx="7" fill="var(--surface)" stroke="var(--border)" stroke-width="1.3"/>
+            <text x="750" y="161" text-anchor="middle" class="svg-mono">engine-sql</text>
+            <text x="750" y="176" text-anchor="middle" class="svg-label-sm">parser · AST 改写 · 血缘 · 421</text>
+
+            <rect x="32" y="192" width="195" height="38" rx="7" fill="var(--surface)" stroke="var(--border)" stroke-width="1.3"/>
+            <text x="129" y="207" text-anchor="middle" class="svg-mono">engine-meta-core</text>
+            <text x="129" y="222" text-anchor="middle" class="svg-label-sm">元数据 · 特征 · 排名 · 238</text>
+
+            <rect x="239" y="192" width="195" height="38" rx="7" fill="var(--surface)" stroke="var(--border)" stroke-width="1.3"/>
+            <text x="336" y="207" text-anchor="middle" class="svg-mono">engine-common</text>
+            <text x="336" y="222" text-anchor="middle" class="svg-label-sm">EngineContext · DataResult · 310</text>
+
+            <rect x="446" y="192" width="195" height="38" rx="7" fill="var(--surface)" stroke="var(--border)" stroke-width="1.3"/>
+            <text x="543" y="207" text-anchor="middle" class="svg-mono">formula-sdk</text>
+            <text x="543" y="222" text-anchor="middle" class="svg-label-sm">公式 → 方言 SQL 表达式的桥 · 162</text>
+
+            <text x="653" y="207" class="svg-label-sm">全部 artifact 均为 *-sdk</text>
+            <text x="653" y="222" class="svg-label-sm" style="fill:var(--indigo)">零 @RestController —— 是库不是服务</text>
+
+            <path d="M440 242 V252" stroke="var(--border-strong)" stroke-width="1.5" marker-end="url(#ar0)"/>
+
+            <!-- 泳道三：数据源 -->
+            <rect x="16" y="254" width="848" height="76" rx="10" fill="var(--green-soft)" stroke="rgba(15,157,88,.26)" stroke-width="1.4"/>
+            <text x="32" y="276" class="svg-title" style="fill:var(--green)">数据源插件层 · 63 份描述文件，执行器由插件门面给出</text>
+
+            <rect x="32" y="286" width="261" height="32" rx="7" fill="var(--surface)" stroke="var(--border)" stroke-width="1.3"/>
+            <text x="162" y="306" text-anchor="middle" class="svg-label-sm">JDBC 类 → JdbcDsExecutor</text>
+            <rect x="309" y="286" width="261" height="32" rx="7" fill="var(--surface)" stroke="var(--border)" stroke-width="1.3"/>
+            <text x="439" y="306" text-anchor="middle" class="svg-label-sm">REST 类 → 不生成 SQL</text>
+            <rect x="586" y="286" width="261" height="32" rx="7" fill="var(--surface)" stroke="var(--border)" stroke-width="1.3"/>
+            <text x="716" y="306" text-anchor="middle" class="svg-label-sm">领域元数据类 → 调下游接口</text>
+          </svg>
+        </div>
+        <figcaption>图 2 · 引擎三层结构：上层入口统一收敛到描述器契约，中间是七个能力模块，底部是数据源插件</figcaption>
+      </figure>
+
+      <div class="tw">
+        <table>
+          <thead><tr><th>模块</th><th>拥有什么</th><th class="num">Java 文件</th><th>artifact</th></tr></thead>
+          <tbody>
+            <tr><td><code>query-engine</code></td><td>SQL 构造、方言翻译、数据源执行、插件门面</td><td class="num">812</td><td><code>iuap-dp-queryengine-sdk</code></td></tr>
+            <tr><td><code>calc-engine</code></td><td>执行器、处理器链、结果计算</td><td class="num">478</td><td><code>iuap-dp-calcengine-sdk</code></td></tr>
+            <tr><td><code>engine-formula</code></td><td>公式 AST、parse/validate/split/eval、函数注册</td><td class="num">585</td><td><code>iuap-dp-unitedformula-sdk</code></td></tr>
+            <tr><td><code>engine-sql</code></td><td>parser、AST 改写、血缘、RBO primitive</td><td class="num">421</td><td><code>iuap-dp-enginesql-sdk</code></td></tr>
+            <tr><td><code>engine-meta-core</code></td><td>元数据模型、特征、排名、脚本</td><td class="num">238</td><td><code>iuap-dp-enginemeta-api</code></td></tr>
+            <tr><td><code>engine-common</code></td><td><code>EngineContext</code>、<code>DataResult</code>、异常、注解</td><td class="num">310</td><td><code>iuap-dp-enginecommon-sdk</code></td></tr>
+            <tr><td><code>formula-sdk</code></td><td>公式 AST → 方言 SQL 表达式的桥</td><td class="num">162</td><td><code>iuap-dp-formulatrans-sdk</code></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p style="font-size:13px;color:var(--text-3);margin-top:-14px">
+        另有两个历史模块 <code>old-engine</code>（157 个文件）与 <code>cube-facade</code>（28 个），属兼容边界，新链路不走。
+        以上统计不含这两个模块。
+      </p>
+
+      <h3>执行模型：注解 + 优先级队列的处理器流水线</h3>
+      <p>三个注解定义了三类扩展点：前置 23 个、查询 8 个、后置 14 个。加一个能力不用改主流程，写个处理器挂上去、调好 order 就行。</p>
+
+      <figure>
+        <div class="fig">
+          <svg viewBox="0 0 820 250" role="img" aria-label="执行流水线示意图">
+            <defs>
+              <marker id="ar2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                <path d="M0 0 10 5 0 10z" fill="var(--border-strong)"/>
+              </marker>
+            </defs>
+
+            <!-- 阶段条 -->
+            <rect x="24" y="40" width="120" height="58" rx="9" fill="var(--indigo-soft)" stroke="var(--indigo-line)" stroke-width="1.5"/>
+            <text x="84" y="64" text-anchor="middle" class="svg-title" style="fill:var(--indigo)">exec</text>
+            <text x="84" y="82" text-anchor="middle" class="svg-label-sm">入口</text>
+
+            <rect x="168" y="40" width="140" height="58" rx="9" fill="var(--surface)" stroke="var(--border)" stroke-width="1.5"/>
+            <text x="238" y="62" text-anchor="middle" class="svg-title">prepareEngine</text>
+            <text x="238" y="79" text-anchor="middle" class="svg-label-sm">派生 count/total/prerow</text>
+
+            <rect x="332" y="40" width="118" height="58" rx="9" fill="var(--surface)" stroke="var(--border)" stroke-width="1.5"/>
+            <text x="391" y="62" text-anchor="middle" class="svg-title">preExec</text>
+            <text x="391" y="79" text-anchor="middle" class="svg-label-sm">23 个前置</text>
+
+            <rect x="474" y="40" width="118" height="58" rx="9" fill="var(--surface)" stroke="var(--border)" stroke-width="1.5"/>
+            <text x="533" y="62" text-anchor="middle" class="svg-title">realExec</text>
+            <text x="533" y="79" text-anchor="middle" class="svg-label-sm">8 个查询处理器</text>
+
+            <rect x="616" y="40" width="86" height="58" rx="9" fill="var(--surface)" stroke="var(--border)" stroke-width="1.5"/>
+            <text x="659" y="62" text-anchor="middle" class="svg-title">action</text>
+            <text x="659" y="79" text-anchor="middle" class="svg-label-sm">6 条分支</text>
+
+            <rect x="726" y="40" width="70" height="58" rx="9" fill="var(--green-soft)" stroke="rgba(15,157,88,.3)" stroke-width="1.5"/>
+            <text x="761" y="62" text-anchor="middle" class="svg-title" style="fill:var(--green)">after</text>
+            <text x="761" y="79" text-anchor="middle" class="svg-label-sm">14 个后置</text>
+
+            <path d="M144 69 H166" stroke="var(--border-strong)" stroke-width="1.5" marker-end="url(#ar2)"/>
+            <path d="M308 69 H330" stroke="var(--border-strong)" stroke-width="1.5" marker-end="url(#ar2)"/>
+            <path d="M450 69 H472" stroke="var(--border-strong)" stroke-width="1.5" marker-end="url(#ar2)"/>
+            <path d="M592 69 H614" stroke="var(--border-strong)" stroke-width="1.5" marker-end="url(#ar2)"/>
+            <path d="M702 69 H724" stroke="var(--border-strong)" stroke-width="1.5" marker-end="url(#ar2)"/>
+
+            <!-- 下方：前置优先级示例 -->
+            <text x="24" y="132" class="svg-title">前置处理器的优先级（order 越小越先）</text>
+
+            <g>
+              <rect x="24" y="146" width="106" height="30" rx="6" fill="var(--surface-2)" stroke="var(--border)"/>
+              <text x="77" y="165" text-anchor="middle" class="svg-mono">EngineContextInit 1</text>
+            </g>
+            <g>
+              <rect x="140" y="146" width="96" height="30" rx="6" fill="var(--surface-2)" stroke="var(--border)"/>
+              <text x="188" y="165" text-anchor="middle" class="svg-mono">SfStrategy 2</text>
+            </g>
+            <g>
+              <rect x="246" y="146" width="96" height="30" rx="6" fill="var(--surface-2)" stroke="var(--border)"/>
+              <text x="294" y="165" text-anchor="middle" class="svg-mono">Ytenant 5</text>
+            </g>
+            <g>
+              <rect x="352" y="146" width="92" height="30" rx="6" fill="var(--surface-2)" stroke="var(--border)"/>
+              <text x="398" y="165" text-anchor="middle" class="svg-mono">CalcField 16</text>
+            </g>
+            <g>
+              <rect x="454" y="146" width="112" height="30" rx="6" fill="var(--surface-2)" stroke="var(--border)"/>
+              <text x="510" y="165" text-anchor="middle" class="svg-mono">Characteristic 25</text>
+            </g>
+            <g>
+              <rect x="576" y="146" width="106" height="30" rx="6" fill="var(--surface-2)" stroke="var(--border)"/>
+              <text x="629" y="165" text-anchor="middle" class="svg-mono">FormulaSplit 35</text>
+            </g>
+            <g>
+              <rect x="692" y="146" width="104" height="30" rx="6" fill="var(--surface-2)" stroke="var(--border)"/>
+              <text x="744" y="165" text-anchor="middle" class="svg-mono">UniformParam 70</text>
+            </g>
+
+            <text x="24" y="204" class="svg-label-sm">… → AdvancedComputing 72 → BizObjStrategy 73 → PreRowRule 74 → InvocationProxy 75 → UnionPushDown 76</text>
+            <text x="24" y="228" class="svg-label-sm" style="fill:var(--amber)">⚠ order 是隐式契约：写错了问题会以「数据不对」而不是「报错」的形式出现</text>
+          </svg>
+        </div>
+        <figcaption>图 3 · 执行主链路与前置处理器优先级（局部抽样）</figcaption>
+      </figure>
+
+      <h3>分派：一次查询有 6 条可能的执行路径</h3>
+      <p>
+        <code>QueryActionFactory#getAction</code> 按上下文分流。这条很重要：<b>面试官如果问「所有查询都是生成 SQL 跑 JDBC 吗」，答案是不是</b>——
+        有 5 条非 SQL 路径，REST 数据源根本不存在 SQL 这个概念。
+      </p>
+
+      <div class="tw">
+        <table>
+          <thead><tr><th>分支</th><th>条件</th><th>行为</th></tr></thead>
+          <tbody>
+            <tr><td><strong>REST 数据源</strong></td><td><code>context.isRestQuery()</code></td><td>不生成 SQL，转成 <code>RestQuery</code> 调插件</td></tr>
+            <tr><td><strong>领域元数据接口</strong></td><td>元数据表 + 非默认元数据源</td><td>转成 <code>CloudERPQuery</code> 调下游接口</td></tr>
+            <tr><td><strong>语义 Provider</strong></td><td><code>isSemanticProvider()</code></td><td>同上，走远端 <code>/query</code> 或 <code>/sql</code></td></tr>
+            <tr><td><strong>跨源模型</strong></td><td><code>mixedMode && 多数据源</code></td><td>拆子查询、内存合并</td></tr>
+            <tr><td><strong>存储过程</strong></td><td><code>ProObjTable</code> 或 <code>procedureModel</code></td><td><code>callProc</code>，不走普通 SQL</td></tr>
+            <tr><td><strong>默认</strong></td><td>其余</td><td><code>SemanticModelAction</code>，普通 SQL 生成</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>无状态：一个库，不是一个服务</h3>
+      <div class="card hl">
+        <p style="margin-bottom:10px">
+          引擎模块里 <code>@RestController</code> 的数量是 <b style="color:var(--indigo)">0</b>。它被打成 SDK，谁引它的 jar 谁负责暴露接口、负责鉴权、负责开事务。
+        </p>
+        <p style="margin:0;font-size:14px;color:var(--text-2)">
+          <b>技术上：</b>天然无状态，可水平扩展，可以在同进程内被多个业务直接调用，没有 RPC 开销。<br>
+          <b>面试上：</b>回答「怎么承接上层」时这句话最省事——「我们不是一个服务，上层是直接调我们的 jar」。
+        </p>
+      </div>
+    </section>
+
+    <!-- ========== 3 ========== -->
+    <section id="s3">
+      <div class="sec-head"><span class="sec-num">03</span><h2>承接：上层分析怎么跟引擎联通</h2></div>
+      <p class="sec-desc">
+        这是五个问点里最关键的一个，因为它决定了你能不能把「引擎」和「产品」串起来。答案分三层：<b>谁在调、怎么调、调完怎么回去</b>。
+      </p>
+
+      <figure>
+        <div class="fig">
+          <svg viewBox="0 0 820 420" role="img" aria-label="三条上层入口与统一契约示意图">
+            <defs>
+              <marker id="ar3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                <path d="M0 0 10 5 0 10z" fill="var(--border-strong)"/>
+              </marker>
+            </defs>
+
+            <!-- ① 报表线 -->
+            <rect x="20" y="18" width="248" height="150" rx="10" fill="var(--indigo-soft)" stroke="var(--indigo-line)" stroke-width="1.4"/>
+            <text x="34" y="40" class="svg-title" style="fill:var(--indigo)">① 仪表板 / 自由报表 / 大屏</text>
+            <text x="34" y="62" class="svg-mono">GET /analysis/exec/{id}</text>
+            <text x="34" y="79" class="svg-mono">GET /analysis/loadFrame/{id}</text>
+            <text x="34" y="96" class="svg-mono">POST /report/refresh</text>
+            <text x="34" y="122" class="svg-label">→ 页签处理器 SheetProcessor</text>
+            <text x="34" y="140" class="svg-label">→ 区域处理器 Group/Cross/Pivot</text>
+            <text x="34" y="158" class="svg-label">→ NewQueryDataExecutor</text>
+
+            <!-- ② 语义线 -->
+            <rect x="286" y="18" width="248" height="150" rx="10" fill="var(--teal-soft)" stroke="rgba(12,133,153,.28)" stroke-width="1.4"/>
+            <text x="300" y="40" class="svg-title" style="fill:var(--teal)">② 语义模型设计态 / 开放 API</text>
+            <text x="300" y="62" class="svg-mono">POST /semantic/model/exec</text>
+            <text x="300" y="79" class="svg-mono">POST /openApi/semantic/v{ver}/query</text>
+            <text x="300" y="104" class="svg-label">→ SemanticModelDTO</text>
+            <text x="300" y="122" class="svg-label">→ modelToQueryParam</text>
+            <text x="300" y="140" class="svg-label">→ 一步到位</text>
+
+            <!-- ③ 智能线 -->
+            <rect x="552" y="18" width="248" height="150" rx="10" fill="var(--violet-soft)" stroke="rgba(112,72,232,.26)" stroke-width="1.4"/>
+            <text x="566" y="40" class="svg-title" style="fill:var(--violet)">③ ChatBI / DataAgent</text>
+            <text x="566" y="62" class="svg-mono">SemanticFrom</text>
+            <text x="566" y="84" class="svg-label">→ getEngineExecInfoDTO</text>
+            <text x="566" y="102" class="svg-label">　 拿模型执行信息 + 场景权限</text>
+            <text x="566" y="120" class="svg-label">→ builder 自组 QSP</text>
+            <text x="566" y="142" class="svg-label-sm">不复用 modelToQueryParam：</text>
+            <text x="566" y="158" class="svg-label-sm">Agent 查询形态不同 + 多一层场景权限</text>
+
+            <!-- 汇聚 -->
+            <path d="M144 168 V196" stroke="var(--border-strong)" stroke-width="1.6" marker-end="url(#ar3)"/>
+            <path d="M410 168 V196" stroke="var(--border-strong)" stroke-width="1.6" marker-end="url(#ar3)"/>
+            <path d="M676 168 V196" stroke="var(--border-strong)" stroke-width="1.6" marker-end="url(#ar3)"/>
+
+            <!-- 契约框 -->
+            <rect x="120" y="200" width="580" height="52" rx="10" fill="var(--amber-soft)" stroke="rgba(217,119,6,.28)" stroke-width="1.6"/>
+            <text x="410" y="222" text-anchor="middle" class="svg-title" style="fill:var(--amber)">QuerySchemaParam —— 引擎唯一入参</text>
+            <text x="410" y="241" text-anchor="middle" class="svg-mono">查什么列 / 从哪张表 / 怎么过滤 / 分页 / 权限 / 特殊模式</text>
+
+            <path d="M410 252 V286" stroke="var(--border-strong)" stroke-width="1.6" marker-end="url(#ar3)"/>
+
+            <!-- 引擎 -->
+            <rect x="200" y="290" width="420" height="46" rx="10" fill="var(--surface)" stroke="var(--border-strong)" stroke-width="1.6"/>
+            <text x="410" y="312" text-anchor="middle" class="svg-title">StandardFlowExecutor.exec（引擎）</text>
+            <text x="410" y="329" text-anchor="middle" class="svg-label-sm">零 REST · 纯 SDK · 同进程调用</text>
+
+            <path d="M410 336 V366" stroke="var(--border-strong)" stroke-width="1.6" marker-end="url(#ar3)"/>
+
+            <!-- 结果 -->
+            <rect x="230" y="370" width="360" height="40" rx="10" fill="var(--green-soft)" stroke="rgba(15,157,88,.3)" stroke-width="1.6"/>
+            <text x="410" y="395" text-anchor="middle" class="svg-title" style="fill:var(--green)">DataResult —— 引擎唯一出口</text>
+          </svg>
+        </div>
+        <figcaption>图 4 · 三条上层入口汇聚到同一份描述器契约</figcaption>
+      </figure>
+
+      <h3>三条线的差异，正好是「引擎不管业务」的证据</h3>
+      <ul style="font-size:14.5px;color:var(--text-2);line-height:1.9">
+        <li><b>报表线最复杂</b>：先加载 <code>AnalysisModel</code>，按查询桶决定页签与区域的执行批次，再由<b>区域类型</b>决定描述器怎么构造——分组表构造分组维度+指标+合计，交叉表构造行维+列维+交叉点，透视表还要行维指标。</li>
+        <li><b>语义线最直接</b>：<code>SemanticModelDTO</code> + 字段列表 → <code>modelToQueryParam</code>，一步到位。</li>
+        <li><b>智能线最特别</b>：<code>SemanticFrom</code> <b>不复用</b> <code>modelToQueryParam</code>，它先调 <code>getEngineExecInfoDTO</code> 拿模型执行信息和场景权限，再用 builder 自己拼参数。</li>
+      </ul>
+
+      <div class="card teal">
+        <h4>一个容易加分的细节：ChatBI 还有第二条执行路</h4>
+        <p style="margin:0;font-size:14px">
+          <code>SqlTransferExecSqlServiceImpl</code> 拿到外部已经生成好的 SQL 后，直接调 <code>QueryEngineUtil.executeSql(sqlDto, wbDataSource)</code>，
+          <b>跳过 SQL 生成，只用引擎的执行和数据源能力</b>。所以引擎对上层是「生成+执行」和「只执行」两种服务形态都支持。
+        </p>
+      </div>
+
+      <h3>入参与出参：唯一契约</h3>
+      <div class="tw">
+        <table>
+          <thead><tr><th style="width:34%">QuerySchemaParam 装什么</th><th>字段</th></tr></thead>
+          <tbody>
+            <tr><td>查什么列</td><td><code>selectDescriptors</code></td></tr>
+            <tr><td>从哪张表</td><td><code>tableDescriptor</code>、<code>dataBaseDescriptors</code></td></tr>
+            <tr><td>怎么过滤</td><td><code>filterDescriptors</code>、<code>havingDescriptors</code>、<code>filterDefs</code></td></tr>
+            <tr><td>怎么分组排序</td><td><code>groupDescriptor</code>、<code>sortDescriptors</code></td></tr>
+            <tr><td>分页 / 要不要总数合计</td><td><code>pagerDescriptor</code>、<code>totalDescriptor</code></td></tr>
+            <tr><td>要不要承前</td><td><code>inheritPreRowParam</code></td></tr>
+            <tr><td>走哪个数据源</td><td><code>dataSource</code>、<code>dataSetType</code></td></tr>
+            <tr><td>权限怎么给</td><td><code>permissionSetting</code>、<code>newPermissionFlow</code></td></tr>
+            <tr><td>特殊模式</td><td><code>isMixedMode</code>、<code>isAgent</code>、<code>modelScript</code></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="tw">
+        <table>
+          <thead><tr><th style="width:34%">DataResult 带什么回去</th><th>含义</th></tr></thead>
+          <tbody>
+            <tr><td><code>memoryTable</code></td><td>当前页数据（内存表，带字段索引）</td></tr>
+            <tr><td><code>totalCount</code></td><td>总条数（来自 count 派生查询，可能命中 countCache）</td></tr>
+            <tr><td><code>subTotalData</code> / <code>totalData</code></td><td>小计 / 合计</td></tr>
+            <tr><td><code>preRowData</code> / <code>advPreRowData</code></td><td>承前行 / 高级计算承前数据</td></tr>
+            <tr><td><code>columnSfStrategyInfoMap</code></td><td><b>字段权限策略</b>，只交接不脱敏——脱不脱敏由输出侧决定</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p>
+        最后这条特别值得讲：<b>引擎算出「这个字段你不能看」，但它不改值</b>。改值是导出、打印、推送这些输出端的事。
+        这个分工很多人答不上来，但它恰恰说明了引擎的边界感——引擎只负责取数和标记，不负责业务呈现。
+      </p>
+    </section>
+
+    <!-- ========== 4 ========== -->
+    <section id="s4">
+      <div class="sec-head"><span class="sec-num">04</span><h2>边界：引擎做了什么、没做什么</h2></div>
+      <p class="sec-desc">这一段建议主动讲，因为它能挡住后面一半的追问。</p>
+
+      <div class="bounds">
+        <div class="bound do">
+          <h4>✓ 引擎做</h4>
+          <ul>
+            <li>描述器 → 执行上下文</li>
+            <li>生成 SQL、按方言翻译</li>
+            <li>AST 改写、RBO、hint、强制索引</li>
+            <li>选 action、选执行器、执行 SQL</li>
+            <li>算公式、高级计算、累计、小计</li>
+            <li>加数据权限、租户隔离</li>
+            <li>返回 <code>DataResult</code></li>
+          </ul>
+        </div>
+        <div class="bound dont">
+          <h4>✕ 引擎不做</h4>
+          <ul>
+            <li>不定义语义模型、字段、场景（模型侧）</li>
+            <li>不决定什么时候查询（报表 / Agent 编排）</li>
+            <li>不做 CBO——那是数据库内部的事</li>
+            <li>不管理数据源连接配置（数据源管理）</li>
+            <li>不决定物化切表（模型 converter 层）</li>
+            <li>不做字段脱敏（输出侧的事）</li>
+            <li>不做导出、打印、推送、预警</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="kicker">
+        一句话收口：引擎是 <span>「执行」的 owner</span>，不是「语义」的 owner，也不是「呈现」的 owner。
+      </div>
+    </section>
+
+    <!-- ========== 5 ========== -->
+    <section id="s5">
+      <div class="sec-head"><span class="sec-num">05</span><h2>10 道追问</h2></div>
+      <p class="sec-desc">
+        每题统一三段：<b>他在问什么</b> → <b>怎么答</b> → <b>代码依据</b>。前 4 道必问，后 6 道往深里挖时才出现。点开看答案。
+      </p>
+
+      <!-- 1 -->
+      <details class="qa">
+        <summary>
+          <span class="qa-num">Q1</span>
+          为什么引擎不做成微服务，而是做成 SDK？
+          <svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m6 9 6 6 6-6"/></svg>
+        </summary>
+        <div class="qa-body">
+          <p class="qa-label">他在问什么</p>
+          <p>你有没有架构判断力，还是只会照着现状描述。这题答「因为历史原因」就废了，要说清利弊。</p>
+
+          <p class="qa-label two">怎么答</p>
+          <blockquote>
+            「这是刻意的选择，不是没做成。引擎里 <code>@RestController</code> 的数量是 0，项目里每个模块的 artifact 都是 <code>*-sdk</code>——一看就是给别的东西依赖的。
+            <br><br>
+            <b>一，它是数据面的计算，不是控制面。</b>一次报表查询要传 <code>QuerySchemaParam</code>——里面有表描述器、几十个 <code>SelectDescriptor</code>、权限设置、派生参数。这些东西序列化过去再反序列化回来，开销可能比查询本身还大。同进程直接调，对象引用传过去就行。
+            <br><br>
+            <b>二，事务和线程上下文要跟着走。</b>引擎里到处是 <code>InvocationInfoProxy</code>、<code>ThreadLocalHolder</code> 这类上下文，租户、语言、权限 serviceCode 都挂在线程上。跨服务调用要把这些全序列化带过去，漏一个就是权限错乱。
+            <br><br>
+            <b>三，它要跟着业务进程一起扩容。</b>报表服务和引擎是同一个伸缩比——报表多了引擎自然就忙。拆成两个服务反而要各自做容量规划，还多一跳网络。
+            <br><br>
+            代价也很明确：<b>版本必须跟业务同步升级</b>。引擎改了入参对象的字段，所有依赖它的服务都得跟着发版，没有「服务端先上、客户端后上」的缓冲。所以引擎的入参对象变更非常保守，宁可加字段也不改字段。」
+          </blockquote>
+
+          <p class="qa-label three">代码依据</p>
+          <p class="code-ref">
+            引擎模块 <code>@RestController</code> 数量为 0；模块 artifact：<code>iuap-dp-calcengine-sdk</code> / <code>iuap-dp-queryengine-sdk</code> / <code>iuap-dp-enginesql-sdk</code> / <code>iuap-dp-enginecommon-sdk</code> / <code>iuap-dp-enginemeta-api</code> / <code>iuap-dp-formulatrans-sdk</code> / <code>iuap-dp-enginetest-sdk</code>；根 pom <code>&lt;packaging&gt;pom&lt;/packaging&gt;</code>；
+            <code>AbstractFlowExecutor#execInternal</code> 里有 <code>permissionServiceCode</code> 的恢复逻辑，注释明确写着「避免线程复用污染」。
+          </p>
+        </div>
+      </details>
+
+      <!-- 2 -->
+      <details class="qa">
+        <summary>
+          <span class="qa-num">Q2</span>
+          一次查询要跑几条 SQL？
+          <svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m6 9 6 6 6-6"/></svg>
+        </summary>
+        <div class="qa-body">
+          <p class="qa-label">他在问什么</p>
+          <p>你知不知道引擎的「派生查询」模型。答「一条」的候选人，说明只看到表面。</p>
+
+          <p class="qa-label two">怎么答</p>
+          <blockquote>
+            「不一定，最少 1 条，多的能到 5、6 条。核心机制是<b>派生上下文</b>。
+            <br><br>
+            <code>prepareEngineContext</code> 把主 <code>EngineContext</code> 用 <code>KryoUtil.copy</code> 复制几份，每份改一个 <code>ProcessorType</code>，然后各自找自己的处理器去跑：
+            <b>main</b>（主数据，必跑）、<b>count</b>（分页要总数时跑 <code>COUNT(1)</code>）、<b>total</b>（有小计合计时跑，交叉表还可能拆成多条）、
+            <b>prerow</b>（承前模型要上一页最后一行）、<b>advPreRow</b>（累计计算非第一页，补一段前缀查询）、<b>empty</b>（只查总数或只查合计，主查询标记成 empty 跳过）。
+            <br><br>
+            所以「查一个报表」在数据库侧看到的是：<code>COUNT(1)</code> 一条、主分页一条、可能再加小计一条、承前一条。<b>这也是慢查询排查的关键</b>——用户说「报表很慢」，可能是主查询快、<code>COUNT(1)</code> 慢，因为 count 要去排序、要去重。
+            <br><br>
+            还有两个优化点值得说：
+            <br>
+            <b>一是 count 有缓存。</b><code>countCache</code> 是 Guava 的 <code>Cache&lt;String, Integer&gt;</code>，容量 1000、24 小时，key 用临时表名。同一个报表翻页不重复查总数。
+            <br>
+            <b>二是 count 会去排序。</b><code>getSelectSql4Count</code> 里调 <code>removeOrder</code>，但只去 <code>limit == null</code> 那一层的排序——因为带 limit 的排序会影响截取哪批数据，去掉就错了。这个细节很容易被问。」
+          </blockquote>
+
+          <p class="qa-label three">代码依据</p>
+          <p class="code-ref">
+            <code>AbstractFlowExecutor#prepareEngineContext</code> 派生 <code>pageCountContext</code> / <code>totalContext</code> / <code>preRowContext</code>，方式是 <code>KryoUtil.copy(engineContext)</code> 再改 <code>ProcessorType</code>；
+            <code>PageCountQueryProcessor</code> 里 <code>countCache.getIfPresent(cacheKey)</code> 命中直接 <code>setTotalCount</code>，miss 才 <code>getRowsCount()</code>；
+            <code>TotalResultUtils#countCache = CacheUtils.buildCache(1000, 24, TimeUnit.HOURS)</code>；
+            <code>CommonSqlCreator#getSelectSql4Count</code> 构造 <code>COUNT(1)</code> 后调 <code>removeOrder</code>，内部判断 <code>getLimit() == null</code> 才清排序。
+          </p>
+        </div>
+      </details>
+
+      <!-- 3 -->
+      <details class="qa">
+        <summary>
+          <span class="qa-num">Q3</span>
+          ProcessorType 为什么要分这几种？
+          <svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m6 9 6 6 6-6"/></svg>
+        </summary>
+        <div class="qa-body">
+          <p class="qa-label">他在问什么</p>
+          <p>你是背下了枚举，还是理解「为什么是这套切法」。</p>
+
+          <p class="qa-label two">怎么答</p>
+          <blockquote>
+            「因为这几种查询<b>在业务上就是不同的东西</b>，不是同一个查询的不同参数。
+            <br><br>
+            举个最直白的例子：总数查询和主查询长得几乎一样，但<b>它们不是一回事</b>——主查询要排序、要分页、要返回 20 条明细；总数查询只要一个数字，不能带排序（带了浪费），还要能命中缓存。如果一个方法里用 if 判断「这次要不要算 count」，那个方法会长到没人敢改。
+            <br><br>
+            注意两个细节，说明这套设计不是纯理论：
+            <br>
+            <b>第一，prerow 和 advPreRow 没有自己的专用处理器</b>——它们复用 <code>MainQueryProcessor</code>，靠「上下文里装的是什么」来区分。advPreRow 甚至完全没有 <code>@QryProcessor(advPreRow)</code>，<code>realExec</code> 发现列表空就手工 new 一个 <code>MainQueryProcessor</code> 兜底。这是实用主义，不是洁癖。
+            <br>
+            <b>第二，empty 不是「不执行」。</b>看名字会以为是空处理器，实际上它会加载 <code>PageCountQueryMainProcessor</code> 和 <code>TotalQueryMainProcessor</code>——只查总数时，主查询确实该空，但总数和合计还得查。这个命名其实有点误导，我第一次读也以为是空跑。」
+          </blockquote>
+
+          <p class="qa-label three">代码依据</p>
+          <p class="code-ref">
+            <code>ProcessorType</code> 注释本身就是中文：<code>main("主流程处理器")</code>、<code>count("查询总条数处理器")</code>、<code>prerow("查询承前行处理器")</code>、<code>total("查询小计合计处理器")</code>、<code>advPreRow("高级计算承前处理器")</code>、<code>empty("空处理器, 不进行实际的操作")</code>；
+            注册清单：<code>MainQueryProcessor</code> 是 <code>@QryProcessor({main, prerow})</code>，<code>PageCountQueryMainProcessor</code> 与 <code>TotalQueryMainProcessor</code> 都是 <code>@QryProcessor({main, empty})</code>，全仓没有 <code>@QryProcessor(advPreRow)</code>；
+            <code>StandardFlowExecutor#realExec</code> 处理器为空时 new MainQueryProcessor 兜底，<code>doSyncExec</code> 没有这个兜底。
+          </p>
+        </div>
+      </details>
+
+      <!-- 4 -->
+      <details class="qa">
+        <summary>
+          <span class="qa-num">Q4</span>
+          为什么 SQL 生成和 SQL 执行要分两层？
+          <svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m6 9 6 6 6-6"/></svg>
+        </summary>
+        <div class="qa-body">
+          <p class="qa-label">他在问什么</p>
+          <p>你能不能看出「同一个 SQL 字符串被两拨人改」这个设计意图。</p>
+
+          <p class="qa-label two">怎么答</p>
+          <blockquote>
+            「因为<b>两层的关注点完全不同，而且改的时机也不同</b>。
+            <br><br>
+            <b>第一层是 SQL 生成</b>：<code>CommonSqlCreator#getSelectSql4Page</code> 把 <code>EngineContext</code> 变成 <code>QrySchemaBlock</code>（七段结构），再由 <code>SqlFactory#assembleSQL3</code> 按方言翻译成 <code>SqlDTO</code>。这层产出的是<b>业务语义正确的 SQL</b>——用户要的字段、条件、分组都在里面了。
+            <br><br>
+            <b>第二层是 SQL 终稿</b>：<code>getFinalQuery</code> 在真正下发前再处理一遍，顺序是固定的——占位符替换 → dynamic_schema → schema / AP / 逻辑数据源 visitor → 租户隔离条件 → 追踪注释。然后才进 <code>JdbcDsExecutor</code>，JDBC callback 里再走一遍 hint / force index / RBO。
+            <br><br>
+            <b>为什么必须分开？</b>三个理由：
+            <br>
+            <b>一，schema 和租户这些东西，SQL 生成阶段根本不知道。</b>生成时用的是模型里定义的逻辑表名，物理 schema 要等到真正要连哪个数据源才确定。
+            <br>
+            <b>二，RBO 和 hint 必须看到最终 SQL。</b>如果先生成再改、改完再改 schema，那改写结果可能被 schema 替换破坏。所以顺序是死的：先业务语义，再环境适配，最后才是性能优化。
+            <br>
+            <b>三，SQL 预览和真实取数要能复用又不能混淆。</b><code>querySearchSql</code> 复用了第一层和部分前置处理，但它<b>不执行</b>，返回的是 SQL 文本。如果把生成和执行揉在一起，「预览 SQL」这个功能就得重写一遍生成逻辑——那样两边一定会漂移。
+            <br><br>
+            反过来也要说清：<b>不能从 SQL 预览的结果推断真实执行 SQL</b>。预览不做终稿处理；真跑的时候还会加 schema、租户、trace 注释和 RBO 改写。」
+          </blockquote>
+
+          <p class="qa-label three">代码依据</p>
+          <p class="code-ref">
+            <code>CommonSqlCreator#getSelectSql4Page</code> / <code>getSelectSql4Count</code> / <code>getSelectSql4All</code> / <code>getSelectSql4View</code> 都调 <code>SqlFactory.assembleSQL3</code>；
+            <code>DataQueryServiceImpl#getFinalQuery</code> 顺序：<code>replaceConditionPlaceHolder</code> → <code>dynamic_schema</code> → schema visitor → <code>handleTenantFilter</code> → 追踪注释；
+            <code>QuerySqlProvider</code> 在 <code>calc-engine/.../flow/model/</code>；hint / force index / RBO 在 <code>SqlOptimizeConfigUtil#execSqlForceIndexAndRboRulesSetting</code>。
+          </p>
+        </div>
+      </details>
+
+      <!-- 5 -->
+      <details class="qa">
+        <summary>
+          <span class="qa-num">Q5</span>
+          插件化数据源怎么加载、怎么隔离？
+          <svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m6 9 6 6 6-6"/></svg>
+        </summary>
+        <div class="qa-body">
+          <p class="qa-label">他在问什么</p>
+          <p>你是不是只见过「有 63 个数据源」这个数字，还是真的知道它们怎么进来的。</p>
+
+          <p class="qa-label two">怎么答</p>
+          <blockquote>
+            「三个环节：<b>发现 → 登记 → 取用</b>。
+            <br><br>
+            <b>发现</b>靠约定文件。每个数据源模块的 <code>resources/META-INF/</code> 下放一份 <code>intelliv.datasource.plugin</code>，内容包含 <code>name</code>、<code>plugin</code> 类名、<code>type</code>、<code>order</code>。<code>loadSysPlugin</code> 用 Spring 的 <code>PathMatchingResourcePatternResolver</code> 扫 <code>classpath*:/META-INF/intelliv.datasource.plugin</code>，扫到几个就是几个，仓库里现在有 63 个。
+            <br><br>
+            <b>登记</b>分两类，这是最容易漏讲的：
+            <br>
+            <b>系统插件</b>：打包时就跟着 classpath 走，启动时用 <code>PluginURLClassLoader</code> 从 jar 里实例化 actuator，存进 <code>SYS_PROVIDERS</code>；
+            <br>
+            <b>自定义插件</b>：从 <code>DSConstant.PLUGINS_DATASOURCE</code> 目录读，<b>惰性加载</b>——<code>getPluginData</code> 先查系统再查自定义，都没命中才现场实例化，写进 <code>CUSTOM_PROVIDERS</code>。为什么惰性？自定义插件可能有几十个，一次性全加载会拖慢启动。
+            <br><br>
+            <b>隔离</b>靠 <code>DriverClassLoader</code>，它继承 <code>URLClassLoader</code>，重写了 <code>loadClass</code>：<b>先去插件自己的 jar 里找，找不到再交给父加载器</b>。这跟双亲委派的顺序是反的——标准是父优先，这里是子优先。为什么？因为不同数据源可能带同一个驱动类的不同版本，比如两个版本的 <code>ojdbc</code>。子优先能保证插件用自己带的驱动，不跟别人串。
+            <br><br>
+            <b>取用</b>统一走 <code>PluginProvider</code> 门面。执行器工厂 <code>SimpleDsExecutorFactory#getExecutor</code> 只看一个东西——<code>AcutatorType</code> 是不是 JDBC。是就 <code>JdbcDsExecutor</code>，不是就 <code>OtherDsExecutor</code>。所以<b>加一个新数据源不需要改引擎任何代码</b>，加一个模块 + 一个描述文件就行。」
+          </blockquote>
+
+          <p class="qa-label three">代码依据</p>
+          <p class="code-ref">
+            <code>PluginInfoLoader#start</code>：先 <code>loadSysPlugin()</code> 再 <code>loadCustomPlugin(DSConstant.PLUGINS_DATASOURCE)</code>，最后 <code>Collections.sort</code>；
+            <code>DriverClassLoader extends URLClassLoader</code>，<code>loadClass</code> 里先 <code>findClass</code> 再 <code>super.loadClass</code>（注释：「先从指定Jar包中加载，找不到再从父classLoader加载」）；
+            <code>SimpleDsExecutorFactory#getExecutor</code>：<code>AcutatorType.JDBC.equals(...)</code> → <code>JdbcDsExecutor</code>，否则 <code>OtherDsExecutor</code>；插件数 = <code>find iuap-data-plugin -name "intelliv.datasource.plugin" | wc -l</code> = 63。
+          </p>
+
+          <p class="qa-label three">图示</p>
+          <figure style="margin:8px 0 0">
+            <div class="fig">
+              <svg viewBox="0 0 800 300" role="img" aria-label="插件加载三阶段示意">
+                <defs>
+                  <marker id="arp" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                    <path d="M0 0 10 5 0 10z" fill="var(--border-strong)"/>
+                  </marker>
+                </defs>
+
+                <!-- 发现 -->
+                <rect x="20" y="20" width="200" height="90" rx="10" fill="var(--indigo-soft)" stroke="var(--indigo-line)" stroke-width="1.5"/>
+                <text x="120" y="45" text-anchor="middle" class="svg-title" style="fill:var(--indigo)">① 发现</text>
+                <text x="120" y="68" text-anchor="middle" class="svg-mono">META-INF/</text>
+                <text x="120" y="85" text-anchor="middle" class="svg-mono">intelliv.datasource.plugin</text>
+                <text x="120" y="101" text-anchor="middle" class="svg-label-sm">扫描到 63 份描述文件</text>
+
+                <path d="M120 110 V140" stroke="var(--border-strong)" stroke-width="1.5" marker-end="url(#arp)"/>
+
+                <!-- 登记分两类 -->
+                <rect x="20" y="146" width="200" height="52" rx="8" fill="var(--surface)" stroke="var(--border)" stroke-width="1.4"/>
+                <text x="120" y="166" text-anchor="middle" class="svg-label">系统插件（随 classpath）</text>
+                <text x="120" y="184" text-anchor="middle" class="svg-mono">启动即实例化 → SYS_PROVIDERS</text>
+
+                <rect x="20" y="206" width="200" height="52" rx="8" fill="var(--surface)" stroke="var(--border)" stroke-width="1.4"/>
+                <text x="120" y="226" text-anchor="middle" class="svg-label">自定义插件（目录读取）</text>
+                <text x="120" y="244" text-anchor="middle" class="svg-mono">惰性加载 → CUSTOM_PROVIDERS</text>
+
+                <text x="20" y="278" class="svg-label-sm">惰性原因：自定义插件可能有几十个，全量加载拖慢启动</text>
+
+                <path d="M220 173 H286" stroke="var(--border-strong)" stroke-width="1.5" marker-end="url(#arp)"/>
+                <path d="M220 232 C240 232 250 200 286 186" stroke="var(--border-strong)" stroke-width="1.5" fill="none" marker-end="url(#arp)"/>
+
+                <!-- 隔离 -->
+                <rect x="292" y="140" width="216" height="120" rx="10" fill="var(--amber-soft)" stroke="rgba(217,119,6,.28)" stroke-width="1.5"/>
+                <text x="400" y="164" text-anchor="middle" class="svg-title" style="fill:var(--amber)">② 隔离 · DriverClassLoader</text>
+                <text x="400" y="188" text-anchor="middle" class="svg-mono">loadClass(name)</text>
+                <text x="400" y="208" text-anchor="middle" class="svg-label-sm">1. findClass → 插件自己的 jar</text>
+                <text x="400" y="226" text-anchor="middle" class="svg-label-sm">2. super.loadClass → 父加载器</text>
+                <text x="400" y="248" text-anchor="middle" class="svg-label-sm" style="fill:var(--amber)">子优先，与双亲委派相反</text>
+
+                <path d="M508 200 H570" stroke="var(--border-strong)" stroke-width="1.5" marker-end="url(#arp)"/>
+
+                <!-- 取用 -->
+                <rect x="576" y="140" width="204" height="120" rx="10" fill="var(--green-soft)" stroke="rgba(15,157,88,.3)" stroke-width="1.5"/>
+                <text x="678" y="164" text-anchor="middle" class="svg-title" style="fill:var(--green)">③ 取用</text>
+                <text x="678" y="186" text-anchor="middle" class="svg-mono">PluginProvider 门面</text>
+                <text x="678" y="208" text-anchor="middle" class="svg-label-sm">SimpleDsExecutorFactory</text>
+                <text x="678" y="226" text-anchor="middle" class="svg-label-sm">JDBC → JdbcDsExecutor</text>
+                <text x="678" y="244" text-anchor="middle" class="svg-label-sm">其它 → OtherDsExecutor</text>
+              </svg>
+            </div>
+            <figcaption>图 5 · 插件加载三阶段：发现 → 登记（两类）→ 隔离 → 门面取用</figcaption>
+          </figure>
+        </div>
+      </details>
+
+      <!-- 6 -->
+      <details class="qa">
+        <summary>
+          <span class="qa-num">Q6</span>
+          字段权限和数据权限的执行顺序？
+          <svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m6 9 6 6 6-6"/></svg>
+        </summary>
+        <div class="qa-body">
+          <p class="qa-label">他在问什么</p>
+          <p>权限这块最容易讲成一锅粥。他要看你能不能分清「改 SQL 的」和「不改 SQL 的」。</p>
+
+          <p class="qa-label two">怎么答</p>
+          <blockquote>
+            「顺序是固定的，而且<b>分成两个阶段</b>：SQL 生成阶段和生成后处理阶段。
+            <br><br>
+            <b>生成阶段</b>，新权限流程直接参与查询块构造：业务对象表走 <code>DataPermissionBizObjTableProcessor#handle</code>，把权限条件加进 <code>querySchema</code>，基础翻译生成 SQL 后再 <code>postHandle</code> 一次；语义脚本表走 <code>SqlConditionAssembler</code>，把命中的表替换成带条件的子查询。
+            <br><br>
+            <b>生成后处理阶段</b>，<code>addExtraSqlPart</code> 里是六步固定顺序：① 字段权限自动匹配 → ② 特殊逗号替换 → ③ 数据权限严控（命中就生成无数据 SQL）→ ④ 多角色组织权限严控 → ⑤ 旧数据权限改写 → ⑥ 加注释。
+            <br><br>
+            关键区分，一定说清楚：<b>字段权限不改 SQL，数据权限改 SQL</b>。
+            <br>
+            字段权限是「你无权看这个字段」，但 SQL 里这个字段还得 SELECT 出来——因为要不要展示、要不要脱敏，是输出端决定的。所以引擎只是把策略放进 <code>columnSfStrategyInfoMap</code> 交出去，<code>handleColumnLevelPermission</code> 的返回值是 <code>void</code>，它不碰 SQL 字符串。
+            <br>
+            数据权限是「你无权看这些行」，那必须在 SQL 里加 WHERE，否则数据都出来了再过滤就晚了。所以它一定是改写 SQL 或者生成 no-data SQL。
+            <br><br>
+            还有第五步那个 <code>handelDataPermission</code> 是<b>旧流程</b>。判断条件很绕：新权限流程为真、或者 <code>onlyBizObjTable()</code> 命中，就跳过。而 <code>onlyBizObjTable()</code> 不是字面意思的「只有业务对象表」——<code>commonTableDict</code> 非空且每项都是 <code>BizObjTable</code> / <code>SemanticTable</code> / 带特征的 <code>SourceTable</code> 才返回 true，空字典返回 false。这个细节被问到时说出来会很加分。」
+          </blockquote>
+
+          <p class="qa-label three">代码依据</p>
+          <p class="code-ref">
+            <code>addExtraSqlPart</code> 的 <code>ExecuteMonitor.nextWatch</code> 顺序：添加额外SQL片段 → 处理SQL特殊符号 → SQL权限严控 → SQL多角色组织权限严控 → SQL权限处理 → 添加SQL注释；
+            <code>handleColumnLevelPermission</code> 返回 <code>void</code>，写 <code>EngineContext.columnSfStrategyInfoMap</code>；
+            <code>DataPermissionUtil#setAuthCtrl</code>、<code>DataPermissionServiceImpl#addPermissionForSQL</code> 是旧流程 SQL 改写；执行前还有 <code>DataQueryServiceImpl#getFinalQuery</code> 做 schema visitor + <code>handleTenantFilter</code> 租户隔离。
+          </p>
+
+          <p class="qa-label three">图示</p>
+          <figure style="margin:8px 0 0">
+            <div class="fig">
+              <svg viewBox="0 0 820 420" role="img" aria-label="权限处理两阶段与六步固定顺序示意">
+                <defs>
+                  <marker id="arq" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                    <path d="M0 0 10 5 0 10z" fill="var(--border-strong)"/>
+                  </marker>
+                </defs>
+
+                <!-- 阶段一 -->
+                <rect x="18" y="18" width="784" height="118" rx="12" fill="var(--indigo-soft)" stroke="var(--indigo-line)" stroke-width="1.5"/>
+                <text x="40" y="44" class="svg-title" style="fill:var(--indigo)">阶段一 · SQL 生成阶段（权限条件参与查询块构造）</text>
+
+                <rect x="40" y="58" width="342" height="62" rx="8" fill="var(--surface)" stroke="var(--border)" stroke-width="1.3"/>
+                <text x="60" y="80" class="svg-mono">DataPermissionBizObjTableProcessor#handle</text>
+                <text x="60" y="102" class="svg-label-sm">业务对象表：权限条件写进 querySchema，翻译后 postHandle 一次</text>
+
+                <rect x="410" y="58" width="372" height="62" rx="8" fill="var(--surface)" stroke="var(--border)" stroke-width="1.3"/>
+                <text x="430" y="80" class="svg-mono">SqlConditionAssembler</text>
+                <text x="430" y="102" class="svg-label-sm">语义脚本表：命中的表替换成带权限条件的子查询</text>
+
+                <path d="M410 152 V182" stroke="var(--border-strong)" stroke-width="1.5" marker-end="url(#arq)"/>
+                <text x="428" y="172" class="svg-label-sm">基础翻译产出 SQL 之后</text>
+
+                <!-- 阶段二：六步 -->
+                <rect x="18" y="190" width="784" height="176" rx="12" fill="var(--surface-2)" stroke="var(--border)" stroke-width="1.5"/>
+                <text x="40" y="216" class="svg-title">阶段二 · 生成后处理 addExtraSqlPart（六步固定顺序，顺序不可换）</text>
+
+                <!-- step chips 1-6 -->
+                <g>
+                  <rect x="40" y="232" width="118" height="54" rx="8" fill="var(--indigo-soft)" stroke="var(--indigo-line)" stroke-width="1.2"/>
+                  <text x="99" y="252" text-anchor="middle" class="svg-label-sm" style="fill:var(--indigo)">① 字段权限匹配</text>
+                  <text x="99" y="272" text-anchor="middle" class="svg-mono">void · 不改 SQL</text>
+                </g>
+                <g>
+                  <rect x="170" y="232" width="112" height="54" rx="8" fill="var(--surface)" stroke="var(--border)" stroke-width="1.2"/>
+                  <text x="226" y="252" text-anchor="middle" class="svg-label-sm">② 特殊逗号替换</text>
+                  <text x="226" y="272" text-anchor="middle" class="svg-mono">handleDataComma</text>
+                </g>
+                <g>
+                  <rect x="294" y="232" width="122" height="54" rx="8" fill="var(--rose-soft)" stroke="rgba(194,37,92,.28)" stroke-width="1.2"/>
+                  <text x="355" y="252" text-anchor="middle" class="svg-label-sm" style="fill:var(--rose)">③ 数据权限严控</text>
+                  <text x="355" y="272" text-anchor="middle" class="svg-mono">no-data SQL</text>
+                </g>
+                <g>
+                  <rect x="428" y="232" width="142" height="54" rx="8" fill="var(--rose-soft)" stroke="rgba(194,37,92,.28)" stroke-width="1.2"/>
+                  <text x="499" y="252" text-anchor="middle" class="svg-label-sm" style="fill:var(--rose)">④ 多角色组织严控</text>
+                  <text x="499" y="272" text-anchor="middle" class="svg-mono">no-data SQL</text>
+                </g>
+                <g>
+                  <rect x="582" y="232" width="112" height="54" rx="8" fill="var(--amber-soft)" stroke="rgba(217,119,6,.28)" stroke-width="1.2"/>
+                  <text x="638" y="252" text-anchor="middle" class="svg-label-sm" style="fill:var(--amber)">⑤ 旧权限改写</text>
+                  <text x="638" y="272" text-anchor="middle" class="svg-mono">可跳过</text>
+                </g>
+                <g>
+                  <rect x="706" y="232" width="76" height="54" rx="8" fill="var(--surface)" stroke="var(--border)" stroke-width="1.2"/>
+                  <text x="744" y="252" text-anchor="middle" class="svg-label-sm">⑥ 加注释</text>
+                  <text x="744" y="272" text-anchor="middle" class="svg-mono">addComment</text>
+                </g>
+
+                <path d="M40 296 H782" stroke="var(--border-strong)" stroke-width="1.2" stroke-dasharray="4 3"/>
+
+                <text x="40" y="318" class="svg-label" style="fill:var(--indigo)">关键区分：字段权限不改 SQL，数据权限必须改 SQL</text>
+                <text x="40" y="338" class="svg-label-sm">字段权限 → 写 columnSfStrategyInfoMap 交输出端决定展示 / 脱敏；数据权限 → 加 WHERE 或直接产出 no-data SQL</text>
+                <text x="40" y="356" class="svg-label-sm" style="fill:var(--amber)">⑤ 的跳过条件：新权限流程为真，或 onlyBizObjTable() 为真（commonTableDict 非空且每项均为业务对象 / 语义 / 带特征来源表）</text>
+
+                <!-- 前后置 -->
+                <rect x="18" y="378" width="384" height="30" rx="6" fill="var(--teal-soft)" stroke="rgba(12,133,153,.28)" stroke-width="1.2"/>
+                <text x="34" y="398" class="svg-label-sm" style="fill:var(--teal)">前置：DataQueryServiceImpl#getFinalQuery → schema visitor</text>
+                <rect x="418" y="378" width="384" height="30" rx="6" fill="var(--teal-soft)" stroke="rgba(12,133,153,.28)" stroke-width="1.2"/>
+                <text x="434" y="398" class="svg-label-sm" style="fill:var(--teal)">其中：handleTenantFilter 做租户隔离，早于所有行级权限</text>
+              </svg>
+            </div>
+            <figcaption>图 6 · 权限两阶段 + addExtraSqlPart 六步固定顺序（改 SQL 与不改 SQL 的分界线）</figcaption>
+          </figure>
+        </div>
+      </details>
+
+      <!-- 7 -->
+      <details class="qa">
+        <summary>
+          <span class="qa-num">Q7</span>
+          RBO 和 CBO 的区别？为什么你们不用 CBO？
+          <svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m6 9 6 6 6-6"/></svg>
+        </summary>
+        <div class="qa-body">
+          <p class="qa-label">他在问什么</p>
+          <p>搞没搞清「数据库内部的优化器」和「应用层自己写的优化器」不是一回事。</p>
+
+          <p class="qa-label two">怎么答</p>
+          <blockquote>
+            「CBO 是<b>基于代价</b>的优化，靠统计信息（行数、选择率、索引基数）估算每种执行计划的成本，选最便宜的。这是数据库内部的事，我们既没有准确的统计信息，也没有权限去干预。
+            <br><br>
+            RBO 是<b>基于规则</b>的，按固定规则做等价的 AST 改写，不估代价。我们的场景恰好适合 RBO，原因只有一个：<b>报表 SQL 是平台自己生成的，结构完全可控</b>。
+            <br><br>
+            举个例子：分组表加一个维度，SQL 里就多一个 LEFT JOIN 和一组 GROUP BY。用户删掉一个指标，那个字段就没被 SELECT 引用了，但它所在的表还在 FROM 里——这种「用不到的表和字段」是可以<b>确定性判断</b>的：外层没引用它、它不在 GROUP BY 里、它没有过滤条件，那就能裁。这不是概率问题，是看 AST 就能得出的事实。
+            <br><br>
+            所以我们的定位很明确：<b>在 SQL 生成侧做优化，不跟数据库抢活</b>。数据库该用什么索引、该走 nested loop 还是 hash join，那是 CBO 决定的；我们做的是「少给数据库一些无用功」。
+            <br><br>
+            反过来说，如果 SQL 是用户手写的、千奇百怪，那规则改写风险就很大——你不知道那条 LEFT JOIN 是不是故意留着的。我们敢做，是因为输入的形态在我们控制范围内。」
+          </blockquote>
+
+          <p class="qa-label three">代码依据</p>
+          <p class="code-ref">
+            <code>BloodRelUtils#process(statement, list)</code> 按配置字符串 <code>;</code> 分割后顺序执行；
+            8 条规则：<code>SQLUnionSelectItemUnifyProcessor</code> → <code>SQLSelectAllTrimProcessor</code> → <code>SQLGroupByItemTrimProcessor</code> → <code>SQLTrimSelectItemProcessor</code> → <code>SQLCondExprDedupProcessor</code> → <code>SQLSubQueryTrimProcessor</code> → <code>SQLLeftJoinTrimProcessor</code> → <code>SQLFilterPushDownProcessor</code>（这是无参 <code>process</code> 的全量顺序，<b>不是</b>生产默认顺序）；
+            生产顺序由 <code>rboRules</code> 配置决定，未知名称静默跳过。
+          </p>
+        </div>
+      </details>
+
+      <!-- 8 -->
+      <details class="qa">
+        <summary>
+          <span class="qa-num">Q8</span>
+          引擎怎么保证改写后结果一致？
+          <svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m6 9 6 6 6-6"/></svg>
+        </summary>
+        <div class="qa-body">
+          <p class="qa-label">他在问什么</p>
+          <p>做 AST 改写最怕的就是「改完结果不对」，他想知道你有没有这种敬畏，以及有没有验证手段。</p>
+
+          <p class="qa-label two">怎么答</p>
+          <blockquote>
+            「四条防线。
+            <br><br>
+            <b>第一，规则本身只做等价变换。</b>我们只做四类事：裁掉没被引用的字段和表、把过滤条件下推到更内层、去掉重复条件、统一 UNION 的项。这四类都是为了消除冗余，不改变结果集。<b>不做</b>的也很明确：不重排 join 顺序、不改聚合逻辑、不动子查询的关联关系。
+            <br><br>
+            <b>第二，改的是 AST 不是字符串。</b>用 Druid 的 parser 把 SQL 解析成 <code>SQLStatement</code>，改节点，再 <code>toSQL</code> 打印回来。这样不会出现「正则替换把某个字段名误伤」的问题。不同方言有不同 factory——MySQL / PG / Oracle / DM / 默认兜底五个。
+            <br><br>
+            <b>第三，失败就整条回退。</b><code>execSqlForceIndexAndRboRulesSetting</code> 把 hint、force index、RBO、序列化<b>全包在一个 try 里</b>，任何一步抛异常，直接 return 原始 SQL。所以最坏情况是「没优化」，而不是「优化错了」。这一点很关键，因为半改写的 SQL 比不改写的 SQL 危险得多。
+            <br><br>
+            <b>第四，测试。</b>引擎有专门的测试 SDK <code>iuap-dp-enginetest-sdk</code>，能声明表拓扑、Mock 数据源、全流程跑一遍验证结果。<code>query-engine</code> 下面还有 <code>test_cases/</code> 目录，按功能分：hint、DataPermissionServiceImpl、SqlUtil、QryBlockFieldAliasTrans、DataDesensitizationUtilTest。
+            <br><br>
+            有一点我要说清楚：<b>「用 EXPLAIN 对比执行计划」是辅助手段，不是主判断依据</b>。我们的正确性判断主要是「改写前后语义等价」这件事本身能论证，加上单测验证数据一致；EXPLAIN 变化只是说明改写生效了。」
+          </blockquote>
+
+          <p class="qa-label three">代码依据</p>
+          <p class="code-ref">
+            <code>execSqlForceIndexAndRboRulesSetting</code> 整段 try-catch，<code>catch (Exception e) { log.error(...) }</code> 后 <code>return querySql</code>；
+            <code>SqlOptimizeFactoryEnums</code>：MYSQL / PG / ORACLE / DM / DEFAULT，DEFAULT 用 <code>MySQLOptimizeFactory</code>；
+            <code>engine-test/README.md</code>：4 套标准基线 <code>baseline_flat_detail.json</code> / <code>baseline_join_semantic.json</code> / <code>baseline_aggregate.json</code> / <code>baseline_pivot.json</code>。
+          </p>
+        </div>
+      </details>
+
+      <!-- 9 -->
+      <details class="qa">
+        <summary>
+          <span class="qa-num">Q9</span>
+          慢 SQL 怎么定位到具体步骤？
+          <svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m6 9 6 6 6-6"/></svg>
+        </summary>
+        <div class="qa-body">
+          <p class="qa-label">他在问什么</p>
+          <p>生产上用过的排查手段，不是纸面知识。</p>
+
+          <p class="qa-label two">怎么答</p>
+          <blockquote>
+            「引擎有一套分层的埋点，从粗到细。
+            <br><br>
+            <b>最粗一层是入口拦截。</b><code>IntellivSlowInterceptor</code> 实现 <code>AsyncHandlerInterceptor</code>，preHandle 开始计时、afterCompletion 结束，超过阈值就落一条 trace。开关是 <code>SLOW_SQL_RECORD_SWITCH</code>，注意这里是<b>严格等于小写字符串 "true"</b> 才生效——<code>TRUE</code>、带空格的都不会开。这个坑我踩过。
+            <br><br>
+            <b>第二层是业务事件埋点。</b>引擎里到处是 <code>EventCreator.business().createContextAsync("分页明细SQL生成", "UID:...")</code> 这种写法，每个关键步骤都有个带 UID 的事件，start / end 一次就是一段计时。<code>iuap-data-engine</code> 仓库里这类 UID 去重后统计有 678 个——慢的时候能直接看出卡在哪一段。
+            <br><br>
+            <b>第三层是处理器级耗时明细。</b><code>StandardFlowExecutor#realExec</code> 里维护一个 <code>costDetail</code> StringBuilder，每个处理器跑完追加一行「处理器名 + 耗时 X 毫秒」。虽然是异步提交，但每个 Future 单独计时，所以能看出是主查询慢还是 count 慢、是前置处理慢还是后置处理慢。
+            <br><br>
+            <b>第四层是超时时的 SQL 现场。</b>这块我觉得设计得挺好：<code>realExec</code> 拿到超时异常后，先调 <code>publishTimeoutSqlExecuteEvent</code> 去 <code>ActiveSqlExecuteRegistry</code> 里查「这条线程此刻正在执行哪条 SQL」，补发一条超时 SQL 快照，<b>然后</b>才 cancel。为什么这个顺序？代码注释写得很清楚——SQL 执行线程可能正卡在 JDBC 调用里，根本没机会走 finally 去写日志，所以监控侧会完全看不到这条超时 SQL。旁路补发就是为了补上这个盲区。
+            <br><br>
+            <b>落库</b>是两张表：<code>ida_slow_sql_trace_info</code> 记 SQL，<code>ida_slow_report_trace_info</code> 记报表诊断树。都带 <code>trace_id</code>，但<b>没有外键</b>，是逻辑关联。清理是每天 02:00 的一个定时任务，先抢 Redis 锁，然后按时间段分批删。」
+          </blockquote>
+
+          <p class="qa-label three">代码依据</p>
+          <p class="code-ref">
+            <code>IntellivSlowInterceptor</code>（<code>iuap-common-core/analyze-report/.../interceptor/</code>）实现 <code>AsyncHandlerInterceptor</code>；
+            引擎内 <code>UID:P_DATA-COMMON-BE_*</code> 事件去重后 678 个（按字符串去重，不代表 678 个独立业务场景）；
+            <code>StandardFlowExecutor#realExec</code> 的 <code>costDetail</code> 与 <code>TimeoutException</code> 分支；
+            <code>publishTimeoutSqlExecuteEvent</code> → <code>ActiveSqlExecuteRegistry.peekCurrent(threadId)</code>；清理任务 <code>ScheduleClearSlowReportTrace</code>。
+          </p>
+        </div>
+      </details>
+
+      <!-- 10 -->
+      <details class="qa">
+        <summary>
+          <span class="qa-num">Q10</span>
+          一个报表查询很慢，你从哪一层开始查？
+          <svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m6 9 6 6 6-6"/></svg>
+        </summary>
+        <div class="qa-body">
+          <p class="qa-label">他在问什么</p>
+          <p>方法论。答「看日志」太浅，他要看你的排查路径是不是有层次。</p>
+
+          <p class="qa-label two">怎么答</p>
+          <blockquote>
+            「我从<b>外往里</b>查，五层。
+            <br><br>
+            <b>第一层：确认是不是查询慢。</b>用户说报表慢，可能是页面渲染慢、可能是模型加载慢，跟查询没关系。先看 trace 里的总耗时，再看引擎入口的耗时——如果引擎只占 100ms，那问题不在引擎。
+            <br><br>
+            <b>第二层：看是主查询慢还是派生查询慢。</b>这是引擎特有的坑——主查询 200ms、<code>COUNT(1)</code> 3 秒，用户体感就是 3 秒。处理器耗时明细里能直接看出来。
+            <br><br>
+            <b>第三层：看 SQL 长什么样。</b><code>querySearchSql</code> 能把当前查询的 SQL 打出来。重点看三件事：表是不是太多了（该裁的没裁）、条件有没有下推、IN 里是不是塞了几千个值。
+            <br><br>
+            <b>第四层：看优化配置有没有生效。</b><code>SqlOptimizeConfigUtil</code> 匹配的是 <code>tenant@user@object</code> 三级 key，很容易配了但没匹配上——比如配在 <code>tenant@ALL@object</code>，但用户实际带了 userId，那就命中不到最细的那条。还有 <code>rboRules</code> 里如果写了不认识的规则名，是<b>静默跳过</b>的，不报错。
+            <br><br>
+            <b>第五层：看数据库侧。</b>到这一层才轮到 EXPLAIN、索引、统计信息。但我要强调一点：<b>引擎能做的优化是有限的</b>。如果 SQL 本身没问题、数据量就是大、索引就是缺，那不是引擎层的活。
+            <br><br>
+            还有一个特别常见的场景：<b>报表刚加了一个维度，突然从 1 秒变 20 秒</b>。这通常是新维度带进来一个 LEFT JOIN，而且关联键没索引。这种从「引擎层」看不出来，得看 SQL 变化——所以我一般会拿改动前后的 SQL diff 一下。」
+          </blockquote>
+
+          <p class="qa-label three">代码依据</p>
+          <p class="code-ref">
+            处理器耗时：<code>StandardFlowExecutor#realExec</code> 的 <code>costDetail</code>；
+            SQL 文本：<code>StandardFlowExecutor#querySearchSql</code> 返回 <code>QuerySqlProvider</code>；
+            配置匹配：<code>MatchSqlOptimizeConfig#matchSettingItems</code>，key 为 <code>po.getYtenantId() + "@" + po.getUserId() + "@" + po.getObjectId()</code>；
+            超时控制：<code>EngineExecuteHelper#getMaxTimeOut</code> / <code>checkEngineMaxExeTime</code>，导出场景用另一套阈值。
+          </p>
+        </div>
+      </details>
+    </section>
+
+    <!-- ========== 6 ========== -->
+    <section id="s6">
+      <div class="sec-head"><span class="sec-num">06</span><h2>速查表</h2></div>
+      <p class="sec-desc">面试前扫一眼。被追到任何一道，先答<b>一句话锚点</b>，再展开。</p>
+
+      <div class="quick">
+        <div class="qrow"><span class="n">1</span><div><p class="q">为什么是 SDK 不是微服务</p><p class="a">数据面计算 + 上下文要跟着走 + 同伸缩比，代价是版本必须同步升</p></div></div>
+        <div class="qrow"><span class="n">2</span><div><p class="q">一次查询几条 SQL</p><p class="a">一主多派生：count / total / prerow / advPreRow / empty，count 还有 1000 条 24 小时缓存</p></div></div>
+        <div class="qrow"><span class="n">3</span><div><p class="q">为什么分 ProcessorType</p><p class="a">这几种查询业务上就是不同东西，写 if 会长到没人敢改</p></div></div>
+        <div class="qrow"><span class="n">4</span><div><p class="q">为什么分两层</p><p class="a">生成时不知道 schema 和租户；优化必须看到最终 SQL</p></div></div>
+        <div class="qrow"><span class="n">5</span><div><p class="q">插件怎么加载</p><p class="a"><code>META-INF</code> 约定 + 系统/自定义两类 + DriverClassLoader 子优先隔离</p></div></div>
+        <div class="qrow"><span class="n">6</span><div><p class="q">权限顺序</p><p class="a">字段权限不改 SQL 只交接策略，数据权限必须改 SQL</p></div></div>
+        <div class="qrow"><span class="n">7</span><div><p class="q">RBO vs CBO</p><p class="a">报表 SQL 自己生成的，结构可控，规则改写确定性强可验证</p></div></div>
+        <div class="qrow"><span class="n">8</span><div><p class="q">怎么保证一致</p><p class="a">只做等价变换 + 改 AST 不改字符串 + 失败整条回退 + 测试</p></div></div>
+        <div class="qrow"><span class="n">9</span><div><p class="q">慢 SQL 怎么定位</p><p class="a">入口拦截 + 678 个 UID 事件 + 处理器耗时明细 + 超时 SQL 旁路补发</p></div></div>
+        <div class="qrow"><span class="n">10</span><div><p class="q">慢查询从哪查</p><p class="a">外往里五层：是不是查询 → 主还是派生 → SQL 长啥样 → 配置生效没 → 数据库</p></div></div>
+      </div>
+    </section>
+
+    <footer>
+      <p style="margin:0 0 10px">
+        <b>内容同步自</b> <code>docs/yondata/面试题库-数据引擎.md</code>。本文只做排版与图示，<b>不新增事实</b>；如与源文件不一致，以源文件为准。
+      </p>
+      <p style="margin:0 0 10px">
+        <b>口径说明</b>：文中规模数字（3032 个 Java 文件、63 个插件、678 个 UID 事件、8 条 RBO 规则、5 个方言工厂、0 个 REST 接口）均为<b>仓库级</b>统计，不代表个人产出。
+        被问「这些你做了哪些」时，按简历提升文档的边界口径回答——SQL 优化是「参与」，不是「设计」。
+      </p>
+      <p style="margin:0" class="no-print">
+        <b>配套材料</b>：<code>SQL动态优化配置机制详解.md</code>（RBO 细节）、<code>YonData技术架构图.md</code>（上层产品架构）、<code>学习代码步骤指引.md</code>（源码路线）。
+      </p>
+    </footer>
+
+  </main>
+</div>
+
+<!-- 浮动控件 -->
+<div class="fab no-print">
+  <button id="themeBtn" title="切换主题" aria-label="切换主题">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5z"/>
+    </svg>
+  </button>
+  <button id="printBtn" title="打印 / 存 PDF" aria-label="打印">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M6 9V3h12v6"/><rect x="3" y="9" width="18" height="8" rx="2"/><path d="M6 17h12v4H6z"/>
+    </svg>
+  </button>
+  <button id="topBtn" title="回到顶部" aria-label="回到顶部">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 19V5"/><path d="m6 11 6-6 6 6"/>
+    </svg>
+  </button>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  var root = document.documentElement;
+
+  /* ---------- 主题 ---------- */
+  var KEY = "kb-standalone-theme";
+  function setTheme(t){
+    root.setAttribute("data-theme", t);
+    try { localStorage.setItem(KEY, t); } catch(e){}
+    var btn = document.getElementById("themeBtn");
+    btn.innerHTML = t === "dark"
+      ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.5 1.5M17.5 17.5 19 19M19 5l-1.5 1.5M6.5 17.5 5 19"/></svg>'
+      : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5z"/></svg>';
+  }
+  var saved = null;
+  try { saved = localStorage.getItem(KEY); } catch(e){}
+  setTheme(saved || (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"));
+
+  document.getElementById("themeBtn").addEventListener("click", function(){
+    setTheme(root.getAttribute("data-theme") === "dark" ? "light" : "dark");
+  });
+
+  /* ---------- 打印 ---------- */
+  document.getElementById("printBtn").addEventListener("click", function(){
+    // 打印前展开全部追问
+    document.querySelectorAll("details.qa").forEach(function(d){ d.open = true; });
+    window.print();
+  });
+
+  /* 打印时也展开 */
+  window.addEventListener("beforeprint", function(){
+    document.querySelectorAll("details.qa").forEach(function(d){ d.open = true; });
+  });
+
+  /* ---------- 回到顶部 ---------- */
+  var topBtn = document.getElementById("topBtn");
+  topBtn.addEventListener("click", function(){ window.scrollTo({top:0, behavior:"smooth"}); });
+
+  /* ---------- 侧栏滚动高亮 ---------- */
+  var links = Array.prototype.slice.call(document.querySelectorAll(".rail a"));
+  var map = {};
+  links.forEach(function(a){
+    var id = a.getAttribute("href").slice(1);
+    var el = document.getElementById(id);
+    if (el) map[id] = a;
+  });
+  var sections = Array.prototype.slice.call(document.querySelectorAll("section[id]"));
+
+  var ticking = false;
+  function onScroll(){
+    if (ticking) return;
+    ticking = true;
+    requestAnimationFrame(function(){
+      ticking = false;
+      var active = null;
+      for (var i = 0; i < sections.length; i++){
+        if (sections[i].getBoundingClientRect().top <= 90) active = sections[i].id;
+        else break;
+      }
+      links.forEach(function(a){ a.classList.remove("active"); });
+      if (active && map[active]) map[active].classList.add("active");
+    });
+  }
+  window.addEventListener("scroll", onScroll, {passive:true});
+  onScroll();
+
+  /* ---------- 平滑锚点（修正 sticky 偏移） ---------- */
+  links.forEach(function(a){
+    a.addEventListener("click", function(e){
+      var id = a.getAttribute("href").slice(1);
+      var el = document.getElementById(id);
+      if (!el) return;
+      e.preventDefault();
+      var top = el.getBoundingClientRect().top + window.pageYOffset - 16;
+      window.scrollTo({top: top, behavior: "smooth"});
+      history.replaceState(null, "", "#" + id);
+    });
+  });
+})();
+</script>
+</body>
+</html>

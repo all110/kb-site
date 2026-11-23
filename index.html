@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>求职准备知识库</title>
+<meta name="description" content="求职准备知识库：YonData 数据智能、数据引擎、在线编程教学平台三个项目，各分项目介绍、面试题库与通用技术知识。">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%232563eb'/><text y='68' x='50' text-anchor='middle' font-size='52' font-family='sans-serif' font-weight='bold' fill='white'>Y</text></svg>">
+<link rel="stylesheet" href="assets/app.css">
+</head>
+<body>
+
+<div class="layout">
+
+  <!-- ========== 侧边栏 ========== -->
+  <aside class="sidebar" aria-label="文档目录">
+    <div class="brand">
+      <div class="brand-mark">Y</div>
+      <div class="brand-text">
+        <div class="brand-title">求职准备知识库</div>
+        <div class="brand-sub">YonData · 引擎 · 在线编程</div>
+      </div>
+    </div>
+
+    <div class="search-wrap">
+      <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+        <circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>
+      </svg>
+      <input id="search" class="search-input" type="search" placeholder="搜索标题或全文…" autocomplete="off" aria-label="搜索文档">
+      <span class="search-kbd">Ctrl K</span>
+    </div>
+
+    <nav id="nav" class="nav-scroll" aria-label="文档列表"></nav>
+
+    <div class="sidebar-foot">
+      <span id="buildInfo" style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span>
+<button id="clearBtn" class="btn ghost" type="button" title="清除全部本地修改" aria-label="清除全部本地修改"></button>
+      <button id="themeBtn" class="btn ghost" type="button" title="切换主题" aria-label="切换主题"></button>
+    </div>
+  </aside>
+
+  <!-- ========== 主内容 ========== -->
+  <div class="main">
+    <div class="progress"><div id="progressBar" class="progress-bar"></div></div>
+
+    <div class="toolbar">
+      <button id="menuBtn" class="btn ghost" type="button" aria-label="打开目录">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+      </button>
+      <div id="crumb" class="crumb"></div>
+      <div class="toolbar-spacer"></div>
+
+      <button id="editBtn" class="btn" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4l10-10-4-4L4 16z"/><path d="m14 6 4 4"/></svg>
+        编辑
+      </button>
+      <button id="resetBtn" class="btn ghost" type="button" style="display:none">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4v6h6"/><path d="M20 10a8 8 0 0 0-14-4L4 8"/></svg>
+        还原
+      </button>
+      <button id="saveBtn" class="btn primary" type="button" style="display:none">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h11l3 3v13H5z"/><path d="M9 4v6h6V4"/></svg>
+        保存
+      </button>
+      <button id="cancelBtn" class="btn ghost" type="button" style="display:none">取消</button>
+      <button id="exportBtn" class="btn" type="button" style="display:none">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 11 5 5 5-5"/><path d="M4 21h16"/></svg>
+        导出
+      </button>
+    </div>
+
+    <div id="editBanner" class="edit-banner" style="display:none"></div>
+    <div id="aiUndo" class="ai-undo" hidden></div>
+
+    <div id="scroll" class="scroll-area">
+      <article id="content" class="content" aria-live="polite"></article>
+      <nav id="pager" class="pager" aria-label="上下篇导航"></nav>
+      <footer style="max-width:880px;margin:0 auto 56px;padding:0 32px;display:flex;gap:16px;flex-wrap:wrap;font-size:12px;color:var(--text-dim)" id="docMeta"></footer>
+    </div>
+  </div>
+
+  <!-- ========== 右侧目录 ========== -->
+  <aside id="toc" class="toc" aria-label="本页目录"></aside>
+
+</div>
+
+<!-- ========== AI 改写：右侧面板 ========== -->
+<aside id="aiPanel" class="ai-panel" aria-label="AI 助手" aria-hidden="true">
+  <header class="ai-head">
+    <div class="ai-title">
+      <span class="ai-mark" aria-hidden="true">AI</span>
+      <span id="aiTitle">AI 助手</span>
+      <span id="aiMode" class="ai-mode offline">本地规则</span>
+    </div>
+    <div class="ai-tools">
+      <button id="aiHistBtn" class="ai-icon" type="button" title="对话历史">☰</button>
+      <button id="aiDiff" class="ai-icon" type="button" aria-pressed="true" title="对比原文与改写">±</button>
+      <button id="aiCfgBtn" class="ai-icon" type="button" title="模型设置">⚙</button>
+      <button id="aiClose" class="ai-icon" type="button" title="关闭（Esc）">✕</button>
+    </div>
+  </header>
+
+  <div id="aiTabs" class="ai-tabs" role="tablist">
+    <button class="ai-tab on" type="button" role="tab" data-tab="chat" aria-selected="true">对话</button>
+    <button class="ai-tab" type="button" role="tab" data-tab="rewrite" aria-selected="false">改写</button>
+  </div>
+
+  <!-- 对话 -->
+  <section id="aiChatPane" class="ai-pane ai-chat-pane">
+    <div id="aiChatLog" class="ai-chat-log">
+      <div class="ai-chat-empty">
+        <p class="ace-title">这个助手会自己查资料</p>
+        <p>问它三个项目里的具体内容，它会先用搜索和阅读工具核对，再回答，并标出「文档 · 第 N 行」。</p>
+        <div class="ace-chips">
+          <button class="ace-chip" type="button" data-ask="把简历里 DataMaster 相关的能力整理成四条 STAR 要点，每条附证据位置">整理简历 STAR 要点</button>
+          <button class="ace-chip" type="button" data-ask="面试很可能追问哪些点？按「问题 + 我该怎么答 + 依据在哪」列出来">预测面试追问</button>
+          <button class="ace-chip" type="button" data-ask="通读知识库，找出三处说法不一致或证据不足的地方">检查口径一致性</button>
+          <button class="ace-chip" type="button" data-ask="我这段经历怎么讲成一条线？先给主线，再给三处可以展开的细节">讲成一条主线</button>
+        </div>
+      </div>
+    </div>
+    <div id="aiChatCtx" class="ai-chat-ctx" hidden></div>
+    <div class="ai-composer">
+      <textarea id="aiInput" class="ai-input" rows="1" placeholder="问点什么，或让它去查资料…（Enter 发送，Shift+Enter 换行）"></textarea>
+      <div class="ai-composer-bar">
+        <span id="aiRunState" class="ai-run-state"></span>
+        <button id="aiStop" class="btn ghost sm" type="button" hidden>停止</button>
+        <button id="aiSendChat" class="btn primary sm" type="button">发送</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- 改写 -->
+  <section id="aiRewritePane" class="ai-pane" hidden>
+  <div id="aiCfg" class="ai-cfg" hidden>
+    <label class="ai-field">
+      <span>模式</span>
+      <select id="cfgMode">
+        <option value="direct">直连接口（OpenAI 兼容）</option>
+        <option value="offline">只用离线规则</option>
+      </select>
+    </label>
+    <label class="ai-field" id="rowDirect">
+      <span>API 地址</span>
+      <input id="cfgBase" type="text" placeholder="https://api.openai.com/v1" autocomplete="off">
+    </label>
+    <label class="ai-field" id="rowDirectModel">
+      <span>模型名</span>
+      <input id="cfgModel" type="text" placeholder="留空用默认" autocomplete="off">
+    </label>
+    <label class="ai-field" id="rowDirectKey">
+      <span>API Key</span>
+      <input id="cfgKey" type="password" placeholder="仅存本机 localStorage" autocomplete="off">
+    </label>
+    <p class="ai-cfg-tip">
+      托管版没有本地服务：想用大模型请在这里填「直连接口」（OpenAI 兼容），不填则退化为离线规则改写。
+    </p>
+    <div class="ai-cfg-actions">
+      <button id="cfgSave" class="btn primary" type="button">保存并检测</button>
+      <button id="cfgCancel" class="btn ghost" type="button">取消</button>
+    </div>
+  </div>
+
+  <section class="ai-sec">
+    <div class="ai-sec-head">选中内容 <span id="aiSrcMeta" class="ai-meta"></span></div>
+    <div id="aiSource" class="ai-source"><p class="ai-empty">框选正文、代码或图片后右键，写下你的要求。</p></div>
+  </section>
+
+  <section class="ai-sec ai-sec-grow">
+    <div class="ai-sec-head">改写结果 <span id="aiResMeta" class="ai-meta"></span></div>
+    <div id="aiResult" class="ai-result"><p class="ai-empty">还没有改写。先在上面的浮层里写要求，回车发送。</p></div>
+  </section>
+
+  <footer class="ai-foot">
+    <button id="aiReplace" class="btn primary" type="button" disabled>覆盖原文</button>
+    <button id="aiCopy" class="btn" type="button" disabled>复制结果</button>
+    <button id="aiRetry" class="btn ghost" type="button" disabled>重试</button>
+    <span class="ai-foot-note">覆盖只写本地版本，源文件不动</span>
+  </footer>
+  </section>
+
+  <!-- 对话历史 -->
+  <section id="aiHistPane" class="ai-pane ai-hist-pane" hidden>
+    <div class="ai-hist-head">
+      <span>对话历史</span>
+      <button id="aiHistNew" class="btn sm" type="button">新对话</button>
+    </div>
+    <div id="aiHistList" class="ai-hist-list"></div>
+  </section>
+</aside>
+
+<!-- ========== AI 改写：浮层输入卡 ========== -->
+<div id="aiCard" class="ai-card" role="dialog" aria-label="AI 改写要求" hidden>
+  <div class="ai-card-head">
+    <span id="aiCardSel">已选</span>
+    <button id="aiCardClose" class="ai-icon" type="button" title="关闭">✕</button>
+  </div>
+  <div id="aiChips" class="ai-chips"></div>
+  <textarea id="aiAsk" class="ai-ask" rows="3" placeholder="告诉 AI 怎么改，例如：再口语一点，控制在三句以内"></textarea>
+  <div class="ai-card-foot">
+    <span id="aiHint" class="ai-hint">回车发送</span>
+    <button id="aiSend" class="btn primary" type="button">发送</button>
+  </div>
+</div>
+
+<button id="aiFab" class="ai-fab" type="button" hidden>AI 改写</button>
+
+<button id="aiOpen" class="ai-open-fab" type="button" title="打开 AI 助手" aria-label="打开 AI 助手">
+  <span class="aof-mark">AI</span>
+  <span class="aof-text">助手</span>
+</button>
+
+<button id="fab" class="fab" type="button" aria-label="回到顶部">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="m6 11 6-6 6 6"/></svg>
+</button>
+
+<script>window.KB_STATIC = true;</script>
+<script src="content.js"></script>
+<script src="assets/markdown.js"></script>
+<script src="assets/agent.js"></script>
+<script src="assets/ai.js"></script>
+<script src="assets/app.js"></script>
+<script>
+  (function () {
+    var C = window.KB_CONTENT;
+    if (C && C.generatedAt) {
+      document.getElementById("buildInfo").textContent = "构建于 " + C.generatedAt.replace("T", " ");
+    }
+  })();
+</script>
+</body>
+</html>
