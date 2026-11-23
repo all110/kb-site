@@ -1454,7 +1454,7 @@ pre.code:hover .copy { opacity: 1; }
     position: fixed;
     inset: 0 auto 0 0;
     width: var(--sidebar-w);
-    z-index: 40;
+    z-index: 45;
     transform: translateX(-100%);
     transition: transform .22s ease;
     box-shadow: var(--shadow-3);
@@ -1465,7 +1465,20 @@ pre.code:hover .copy { opacity: 1; }
   .content h1 { font-size: 24px; }
   .content h2 { font-size: 19px; }
   .pager { grid-template-columns: 1fr; padding: 0 var(--s4); }
+  /* 抽屉打开时，点遮罩即收起 */
+  .nav-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 44;
+    background: rgba(16, 24, 40, .38);
+    animation: nav-fade .18s ease;
+  }
+  .nav-close { display: inline-flex; }
 }
+
+.nav-close { display: none; margin-left: auto; padding: 4px; width: 32px; height: 32px; }
+.nav-close svg { width: 20px; height: 20px; }
+@keyframes nav-fade { from { opacity: 0; } to { opacity: 1; } }
 
 .menu-btn { display: none; }
 @media (max-width: 860px) { .menu-btn { display: inline-flex; } }

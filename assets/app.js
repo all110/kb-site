@@ -791,8 +791,16 @@
   }
 
   /* ---------------- 移动端侧栏 ---------------- */
-  function openMobileNav() { document.body.classList.add("nav-open"); }
-  function closeMobileNav() { document.body.classList.remove("nav-open"); }
+  function openMobileNav() {
+    document.body.classList.add("nav-open");
+    const bd = $("#navBackdrop");
+    if (bd) bd.hidden = false;
+  }
+  function closeMobileNav() {
+    document.body.classList.remove("nav-open");
+    const bd = $("#navBackdrop");
+    if (bd) bd.hidden = true;
+  }
 
   /* ---------------- 初始化 ---------------- */
   function init() {
@@ -846,6 +854,23 @@
     $("#menuBtn").addEventListener("click", () => {
       document.body.classList.contains("nav-open") ? closeMobileNav() : openMobileNav();
     });
+    const navClose = $("#navCloseBtn");
+    if (navClose) navClose.addEventListener("click", closeMobileNav);
+    const navBackdrop = $("#navBackdrop");
+    if (navBackdrop) navBackdrop.addEventListener("click", closeMobileNav);
+    // 抽屉里选中一篇后自动收起，手机上不用再点一次
+    $("#nav").addEventListener("click", (e) => {
+      if (e.target.closest("a[href^='#/']")) closeMobileNav();
+    });
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && document.body.classList.contains("nav-open")) closeMobileNav();
+    });
+    // 转成桌面宽度时清掉抽屉状态，免得回来时残留在打开态
+    if (window.matchMedia) {
+      const mq = window.matchMedia("(min-width: 861px)");
+      const sync = () => { if (mq.matches) closeMobileNav(); };
+      mq.addEventListener ? mq.addEventListener("change", sync) : mq.addListener(sync);
+    }
 
     if (!C.docs || !Object.keys(C.docs).length) {
       $("#content").innerHTML =
