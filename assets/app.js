@@ -403,7 +403,7 @@
   /* ---------------- 文档渲染 ---------------- */
   function crumbHTML(title) {
     return '<a class="crumb-home" href="#/">首页</a><span class="crumb-sep">/</span>' +
-      (title ? "<b>" + esc(title) + "</b>" : "");
+      "<b>" + esc(title) + "</b>";
   }
 
   function docText(slug) {
@@ -432,6 +432,7 @@
 
     // 工具栏
     $("#crumb").innerHTML = crumbHTML(doc.title);
+    $("#backBtn").style.display = "";
     $("#editBtn").disabled = !KBStore.available();
     $("#editBtn").style.display = "";
     $("#resetBtn").style.display = edited ? "" : "none";
@@ -531,7 +532,8 @@
   function showHome() {
     state.slug = null;
     state.editing = false;
-    $("#crumb").innerHTML = crumbHTML(null);
+    $("#crumb").innerHTML = "<b>首页概览</b>";
+    $("#backBtn").style.display = "none";
     $("#editBtn").style.display = "none";
     $("#resetBtn").style.display = "none";
     $("#editBanner").style.display = "none";
@@ -639,6 +641,7 @@
   function showNotFound(slug) {
     state.slug = null;
     $("#crumb").innerHTML = crumbHTML("未找到");
+    $("#backBtn").style.display = "";
     $("#editBtn").style.display = "none";
     $("#resetBtn").style.display = "none";
     $("#pager").innerHTML = "";

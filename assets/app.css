@@ -388,6 +388,8 @@ body {
 .crumb-home { color: var(--accent); text-decoration: none; flex: none; padding: 2px 4px; margin: -2px 0; border-radius: var(--r-sm); }
 .crumb-home:hover { background: var(--accent-soft); text-decoration: none; }
 .crumb-sep { flex: none; color: var(--text-dim); }
+.back-btn { flex: none; padding: 0 8px 0 6px; }
+.back-btn svg, .menu-btn svg { width: 16px; height: 16px; }
 
 .toolbar-spacer { flex: 1; }
 
