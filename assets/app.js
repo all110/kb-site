@@ -401,6 +401,11 @@
   }
 
   /* ---------------- 文档渲染 ---------------- */
+  function crumbHTML(title) {
+    return '<a class="crumb-home" href="#/">首页</a><span class="crumb-sep">/</span>' +
+      (title ? "<b>" + esc(title) + "</b>" : "");
+  }
+
   function docText(slug) {
     const doc = C.docs[slug];
     if (!doc) return "";
@@ -426,7 +431,7 @@
     }
 
     // 工具栏
-    $("#crumb").innerHTML = "文档 / <b>" + esc(doc.title) + "</b>";
+    $("#crumb").innerHTML = crumbHTML(doc.title);
     $("#editBtn").disabled = !KBStore.available();
     $("#editBtn").style.display = "";
     $("#resetBtn").style.display = edited ? "" : "none";
@@ -526,7 +531,7 @@
   function showHome() {
     state.slug = null;
     state.editing = false;
-    $("#crumb").innerHTML = "<b>首页概览</b>";
+    $("#crumb").innerHTML = crumbHTML(null);
     $("#editBtn").style.display = "none";
     $("#resetBtn").style.display = "none";
     $("#editBanner").style.display = "none";
@@ -633,7 +638,7 @@
 
   function showNotFound(slug) {
     state.slug = null;
-    $("#crumb").innerHTML = "<b>未找到</b>";
+    $("#crumb").innerHTML = crumbHTML("未找到");
     $("#editBtn").style.display = "none";
     $("#resetBtn").style.display = "none";
     $("#pager").innerHTML = "";

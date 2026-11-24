@@ -1,5 +1,5 @@
 window.KB_CONTENT = {
-"generatedAt": "2026-11-23T17:01:12",
+"generatedAt": "2026-11-24T17:19:58",
 "sections": [
 {
 "key": "intro",

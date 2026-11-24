@@ -374,13 +374,20 @@ body {
 }
 
 .crumb {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  min-width: 0;
   font-size: var(--fs-sm);
   color: var(--text-dim);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.crumb b { color: var(--text); font-weight: 600; }
+.crumb b { color: var(--text); font-weight: 600; overflow: hidden; text-overflow: ellipsis; }
+.crumb-home { color: var(--accent); text-decoration: none; flex: none; padding: 2px 4px; margin: -2px 0; border-radius: var(--r-sm); }
+.crumb-home:hover { background: var(--accent-soft); text-decoration: none; }
+.crumb-sep { flex: none; color: var(--text-dim); }
 
 .toolbar-spacer { flex: 1; }
 

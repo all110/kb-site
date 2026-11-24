@@ -4,7 +4,7 @@ YonData 数据智能、数据引擎、在线编程教学平台三个项目的资
 每个项目分「项目介绍 / 面试题库 / 通用技术知识」三个分区，共 59 篇文档，
 含站内检索、深色主题、mermaid 架构图。
 
-> 本目录是构建产物，由 `docs/yondata-kb/tools/build_site_dist.py --target github` 生成于 2026-11-23。
+> 本目录是构建产物，由 `docs/yondata-kb/tools/build_site_dist.py --target github` 生成于 2026-11-24。
 > **不要手改这里的文件**，下次构建会覆盖。
 
 ## 直接看
